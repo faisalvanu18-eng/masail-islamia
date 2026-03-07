@@ -95,10 +95,10 @@ function openDetailFull() {
   setText('d-mad', `Fiqh · ${m.madhab || 'Shafi'}`);
   setText('d-date', fmtDate(m.publishedDate));
  document.getElementById('d-q').innerHTML =
-  (m.questionUrdu || '').replace(/\n/g, "<br><br>");
+  (m.questionUrdu || '').replace(/\n/g, "<br>");
 
 document.getElementById('d-a').innerHTML =
-  (m.answerUrdu || '').replace(/\n/g, "<br><br>");
+  (m.answerUrdu || '').replace(/\n/g, "<br>");
   setText('d-ref', m.reference || 'درمختار، رد المحتار، فتاوی عالمگیری');
 
   openDetail();
