@@ -341,7 +341,19 @@ async function submitQ() {
   const phone = getVal('ask-phone');
   const topic = getVal('ask-topic');
   const qtext = getVal('ask-q');
+  const res = await fetch(`${API}/questions`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ name, email, phone, topic, questionText: qtext })
+});
 
+const json = await res.json();
+
+if (json.success) {
+  showToast('آپ کا سوال کامیابی سے بھیج دیا گیا ✓');
+} else {
+  showToast(json.message || 'Server error, please try again later');
+}
   if (!name || !email || !phone || !qtext) {
     showToast('تمام ضروری خانے پُر کریں — Fill all fields');
     return;
