@@ -38,7 +38,7 @@ app.use('/api/books', bookRoutes);
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
-    message: 'Masail Islamia API is running',
+    message: 'Question saved succesfully',
     time: new Date().toISOString()
   });
 });
