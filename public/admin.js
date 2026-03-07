@@ -1,4 +1,4 @@
-const API = 'http://localhost:5000/api';
+const API = 'https://masail-islamia.onrender.com/api';
 
 window.addEventListener('DOMContentLoaded', () => {
   const token = localStorage.getItem('adminToken');
