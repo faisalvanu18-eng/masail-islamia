@@ -20,15 +20,7 @@ connectDB();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use(cors({
-  origin: [
-    process.env.FRONTEND_URL || 'http://localhost:5500',
-    'http://127.0.0.1:5500',
-    'http://localhost:5500',
-    'null'
-  ],
-  credentials: true
-}));
+app.use(cors());
 
 // Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
