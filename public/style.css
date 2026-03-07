@@ -4,7 +4,7 @@
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;600;700&family=Amiri:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Noto+Nastaliq+Urdu:wght@400;500;600;700&display=swap');
 /* ── Jameel Noori Nastaleeq (local install) ── */
 @font-face {
   font-family: 'JameelNoori';
@@ -615,8 +615,14 @@ footer {
   border-right:4px solid var(--gold);
 }
 .dtl-ref-lbl { font-family:var(--fui); font-size:.62rem; color:var(--gold); letter-spacing:.1em; direction:ltr; margin-bottom:3px; }
-.dtl-ref-txt { font-family:var(--fu); font-size:.85rem; color:var(--txt-m); line-height:1.9; }
-
+.dtl-ref-txt {
+  font-family: 'Amiri', 'Noto Naskh Arabic', serif;
+  font-size: .9rem;
+  color: var(--txt-m);
+  line-height: 1.9;
+  direction: rtl;
+  text-align: right;
+}
 /* =============================================
    TOAST
    ============================================= */
