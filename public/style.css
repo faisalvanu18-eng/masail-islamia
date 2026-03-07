@@ -7,10 +7,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Noto+Nastaliq+Urdu:wght@400;500;600;700&display=swap');
 /* ── Jameel Noori Nastaleeq (local install) ── */
 @font-face {
-  font-family: 'JameelNoori';
-  src: local('Jameel Noori Nastaleeq'), local('JameelNooriNastaleeq'), local('Jameel Noori Nastaleeq Regular');
+    font-family: 'Jameel';
+    src: url('/fonts/Jameel-Noori-Nastaleeq.ttf') format('truetype');
 }
-
 :root {
   /* Warm ivory / gold / brown palette */
   --iv0: #fffdf8;
