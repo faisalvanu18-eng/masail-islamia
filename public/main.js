@@ -94,8 +94,11 @@ function openDetailFull() {
   setText('d-cat', m.category);
   setText('d-mad', `Fiqh · ${m.madhab || 'Shafi'}`);
   setText('d-date', fmtDate(m.publishedDate));
-  setText('d-q', m.questionUrdu);
-  setText('d-a', m.answerUrdu);
+ document.getElementById('d-q').innerHTML =
+  (m.questionUrdu || '').replace(/\n/g, "<br><br>");
+
+document.getElementById('d-a').innerHTML =
+  (m.answerUrdu || '').replace(/\n/g, "<br><br>");
   setText('d-ref', m.reference || 'درمختار، رد المحتار، فتاوی عالمگیری');
 
   openDetail();
