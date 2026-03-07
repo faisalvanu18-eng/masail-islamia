@@ -336,7 +336,7 @@ function renderBooks(list) {
    ASK FATWA SUBMIT
    ───────────────────────────────────────────── */
 async function submitQ() {
-  const name = getVal('ask-name');
+  const name  = getVal('ask-name');
   const email = getVal('ask-email');
   const phone = getVal('ask-phone');
   const topic = getVal('ask-topic');
@@ -348,10 +348,9 @@ async function submitQ() {
   }
 
   const btn = document.getElementById('sub-btn');
-  if (btn) {
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spin"></span> ارسال ہو رہا ہے...';
-  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> ارسال ہو رہا ہے...';
 
   try {
     const res = await fetch(`${API}/questions`, {
@@ -365,30 +364,28 @@ async function submitQ() {
     if (json.success) {
       showToast('آپ کا سوال کامیابی سے بھیج دیا گیا ✓');
 
-      ['ask-name', 'ask-email', 'ask-phone', 'ask-q'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-      });
+      document.getElementById('ask-name').value = '';
+      document.getElementById('ask-email').value = '';
+      document.getElementById('ask-phone').value = '';
+      document.getElementById('ask-q').value = '';
+      document.getElementById('ask-topic').selectedIndex = 0;
 
-      const t = document.getElementById('ask-topic');
-      if (t) t.selectedIndex = 0;
     } else {
-      showToast('خرابی: ' + (json.message || 'Error'));
+      showToast(json.message || 'Error sending question');
     }
-  } catch (error) {
-    showToast('آپ کا سوال کامیابی سے بھیج دیا گیا ✓');
+
+  } catch (err) {
+    showToast('Server error. Please try again.');
   }
 
-  if (btn) {
-    btn.disabled = false;
-    btn.innerHTML = `
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="22" y1="2" x2="11" y2="13"></line>
-        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-      </svg>
-      <span>سوال بھیجیں · SUBMIT</span>
-    `;
-  }
+  /* ALWAYS reset button */
+  btn.disabled = false;
+  btn.innerHTML = `
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+  <line x1="22" y1="2" x2="11" y2="13"/>
+  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+  </svg>
+  <span>سوال بھیجیں · SUBMIT</span>`;
 }
 
 
