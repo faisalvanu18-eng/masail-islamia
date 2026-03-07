@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>مسائل اسلامیہ — Masail Islamia</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ══════════════ INTRO SPLASH ══════════════ -->
+<div id="intro">
+  <div class="intr-grid"></div>
+  <div class="intr-ring"></div>
+  <div class="intr-ring"></div>
+  <div class="intr-ring"></div>
+  <div class="intr-gem">🕌</div>
+  <p class="intr-bism">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيمِ</p>
+  <div class="intr-bar"></div>
+  <h1 class="intr-title">مسائل اسلامیہ</h1>
+  <p class="intr-sub">زیرِ سرپرستی: حضرت مفتی رفیق پورکر مدنی۔</p>
+</div>
+
+<!-- ══════════════ DETAIL PAGE ══════════════ -->
+<div id="pgDetail">
+  <div class="dtl-bar">
+    <button class="btn-bk" onclick="closeDetail()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+      Back
+    </button>
+    <p class="dtl-bar-title">روزانہ مسائل — Daily Masail</p>
+  </div>
+  <div class="dtl-wrap">
+    <div class="dtl-card">
+      <div class="dtl-head">
+        <span class="dtl-num" id="d-num">MASAIL NO. 001 — 07 MARCH 2026</span>
+        <h1 id="d-title">نماز میں سورہ فاتحہ کی فرضیت</h1>
+        <div class="dtl-tags">
+          <span class="dtag" id="d-cat">Namaz</span>
+          <span class="dtag" id="d-mad">Fiqh · Shafi</span>
+          <span class="dtag" id="d-date">07 March 2026</span>
+        </div>
+      </div>
+      <div class="dtl-body">
+        <div class="qa-lbl q">QUESTION — سوال</div>
+        <div class="dtl-q" id="d-q">کیا نماز میں سورہ فاتحہ پڑھنا فرض ہے؟ اگر کوئی شخص جان بوجھ کر یا بھول کر سورہ فاتحہ نہ پڑھے تو اس کی نماز کا کیا حکم ہے؟</div>
+        <div class="qa-lbl a">ANSWER — جواب</div>
+        <div class="dtl-a" id="d-a">فقہ شافعی کے مطابق نماز میں سورہ فاتحہ پڑھنا ضروری ہے۔ اگر چھوڑ دی جائے تو نماز درست نہیں ہوتی۔</div>
+        <div class="dtl-ref">
+          <div class="dtl-ref-lbl">REFERENCE — حوالہ</div>
+          <div class="dtl-ref-txt" id="d-ref">المجموع، مغنی المحتاج، تحفۃ المحتاج</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MAIN PAGE ══════════════ -->
+<div id="pgMain">
+
+  <div class="nav-scrim" id="navScrim" onclick="closeNav()"></div>
+
+  <nav id="navDrawer">
+    <button class="nav-x" onclick="closeNav()">✕</button>
+    <div class="nav-brand">
+      <div class="nav-brand-ico">🕌</div>
+      <p class="nav-brand-name">مسائل اسلامیہ</p>
+    </div>
+    <a href="#sec-home" onclick="closeNav()"><span class="nd"></span>Home</a>
+    <a href="#sec-daily" onclick="closeNav()"><span class="nd"></span>Daily Masail</a>
+    <a href="#sec-ask" onclick="closeNav()"><span class="nd"></span>Ask Masail</a>
+    <a href="#sec-cats" onclick="closeNav()"><span class="nd"></span>Categories</a>
+    <a href="#sec-books" onclick="closeNav()"><span class="nd"></span>Download Books</a>
+    <a href="#sec-contact" onclick="closeNav()"><span class="nd"></span>Contact</a>
+  </nav>
+
+  <header>
+    <div class="hdr-in">
+      <div class="logo-wrap">
+        <div class="logo-orb">🕌</div>
+        <div class="logo-txt">
+          <span class="logo-ur">مسائل اسلامیہ</span>
+          <span class="logo-en">MASAIL ISLAMIA</span>
+        </div>
+      </div>
+      <button class="menu-btn" onclick="openNav()">
+        <div class="ham-lines"><span></span><span></span><span></span></div>MENU
+      </button>
+    </div>
+  </header>
+
+  <!-- ① HERO -->
+  <section id="sec-home">
+    <div class="hero-in">
+      <span class="hero-bism">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيمِ</span>
+      <div class="hero-bar"></div>
+      <p class="hero-ur">
+        یہ ویب سائٹ فقہ شافعی کے مطابق روزمرہ کے اسلامی مسائل اور فقہی سوالات کے جوابات فراہم کرنے کے لیے بنائی گئی ہے۔
+        <br>
+        زیرِ سرپرستی: حضرت مفتی رفیق پورکر مدنی۔
+      </p>
+      <p class="hero-en">
+        This website provides Islamic jurisprudence answers according to Fiqh E Shafayi everyday questions, under the guidance of Hazrat Mufti Rafiq Purkar Madni.
+      </p>
+    </div>
+  </section>
+
+  <!-- ② DAILY MASAIL -->
+  <section id="sec-daily">
+    <div class="sw">
+      <div class="sec-hd">
+        <span class="ur">روزانہ کے مسائل</span>
+        <span class="en">Daily Masail's</span>
+        <div class="sec-bar"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-hd-text">
+            <span class="ur">آج کا مسئلہ</span>
+            <span class="en">Today's Masla</span>
+          </div>
+          <div class="card-hd-ico">📖</div>
+        </div>
+
+        <div class="masail-body">
+          <div class="masail-tag">🗓 <span id="masail-date">07 March 2026</span></div>
+          <h2 class="masail-ti" id="masail-title">نماز میں سورہ فاتحہ کی فرضیت</h2>
+          <p class="masail-ex" id="masail-excerpt">فقہ شافعی کے مطابق نماز میں سورہ فاتحہ پڑھنا ضروری ہے...</p>
+
+          <button class="btn-rm" onclick="openDetailFull()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+            </svg>
+            READ MORE ›
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ③ ASK MASAIL -->
+  <section id="sec-ask">
+    <div class="sw">
+      <div class="sec-hd">
+        <span class="ur">اپنا مسئلہ پوچھیں</span>
+        <span class="en">Ask Your Masla</span>
+        <div class="sec-bar"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-hd-text">
+            <span class="ur">سوال بھیجیں</span>
+            <span class="en">Submit Your Question</span>
+          </div>
+          <div class="card-hd-ico">✉️</div>
+        </div>
+
+        <div class="form-in">
+          <div class="notice">
+            <p class="ur">آپ کا مسئلہ روزانہ پوسٹ میں شائع کیا جائے گا یا تفصیلی جواب آپ کی ای میل یا فون نمبر پر بھیج دیا جائے گا۔</p>
+            <p class="en">Your question will be published in the daily post or a detailed reply will be sent to your email or phone number.</p>
+          </div>
+
+          <div class="fgrid">
+            <div class="fg">
+              <label>نام <span class="lbe">· Name</span></label>
+              <input id="ask-name" type="text" placeholder="اپنا نام لکھیں">
+            </div>
+
+            <div class="fg">
+              <label>ای میل <span class="lbe">· Email</span></label>
+              <input id="ask-email" type="email" placeholder="email@example.com" style="direction:ltr;text-align:left;">
+            </div>
+
+            <div class="fg">
+              <label>فون نمبر <span class="lbe">· Phone</span></label>
+              <input id="ask-phone" type="tel" placeholder="+91 00000 00000" style="direction:ltr;text-align:left;">
+            </div>
+
+            <div class="fg">
+              <label>موضوع <span class="lbe">· Topic</span></label>
+              <select id="ask-topic">
+                <option value="">موضوع منتخب کریں</option>
+                <option value="Namaz">نماز · Namaz</option>
+                <option value="Roza">روزہ · Roza</option>
+                <option value="Wazu">وضو · Wazu</option>
+                <option value="Zakat">زکوٰة · Zakat</option>
+                <option value="Hajj">حج · Hajj</option>
+                <option value="Nikah">نکاح · Nikah</option>
+                <option value="Talaq">طلاق · Talaq</option>
+                <option value="Other">دیگر · Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="fg" style="margin-bottom:14px;">
+            <label> سوال <span class="lbe">· Your Question</span></label>
+            <textarea id="ask-q" placeholder="اپنا سوال یہاں تفصیل سے لکھیں..."></textarea>
+          </div>
+
+          <button id="sub-btn" class="btn-sub" onclick="submitQ()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="22" y1="2" x2="11" y2="13"/>
+              <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+            <span>سوال بھیجیں · SUBMIT</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ④ CATEGORIES -->
+  <section id="sec-cats">
+    <div class="sw">
+      <div class="sec-hd">
+        <span class="ur">مسائل کی اقسام</span>
+        <span class="en">Categories</span>
+        <div class="sec-bar"></div>
+      </div>
+
+      <div class="cat-grid">
+        <div class="cat-box" data-category="Namaz"><div class="cat-ico">🕌</div><div class="cat-ur">نماز</div><span class="cat-en">Namaz · Prayer</span></div>
+        <div class="cat-box" data-category="Wazu"><div class="cat-ico">💧</div><div class="cat-ur">وضو و طہارت</div><span class="cat-en">Wazu</span></div>
+        <div class="cat-box" data-category="Roza"><div class="cat-ico">🌙</div><div class="cat-ur">روزہ</div><span class="cat-en">Roza · Fasting</span></div>
+        <div class="cat-box" data-category="Zakat"><div class="cat-ico">💰</div><div class="cat-ur">زکوٰة</div><span class="cat-en">Zakat</span></div>
+        <div class="cat-box" data-category="Hajj"><div class="cat-ico">🕋</div><div class="cat-ur">حج و عمرہ</div><span class="cat-en">Hajj & Umrah</span></div>
+        <div class="cat-box" data-category="Nikah"><div class="cat-ico">💍</div><div class="cat-ur">نکاح</div><span class="cat-en">Nikah · Marriage</span></div>
+
+        <div class="cat-box cat-h" data-category="Talaq"><div class="cat-ico">📜</div><div class="cat-ur">طلاق</div><span class="cat-en">Talaq</span></div>
+        <div class="cat-box cat-h" data-category="Halal-Haram"><div class="cat-ico">🍽</div><div class="cat-ur">حلال و حرام</div><span class="cat-en">Halal & Haram</span></div>
+        <div class="cat-box cat-h" data-category="Business"><div class="cat-ico">💼</div><div class="cat-ur">تجارت</div><span class="cat-en">Business</span></div>
+        <div class="cat-box cat-h" data-category="Inheritance"><div class="cat-ico">🏠</div><div class="cat-ur">میراث</div><span class="cat-en">Inheritance</span></div>
+        <div class="cat-box cat-h" data-category="Aqeedah"><div class="cat-ico">📿</div><div class="cat-ur">عقیدہ</div><span class="cat-en">Aqeedah</span></div>
+        <div class="cat-box cat-h" data-category="Dua-Dhikr"><div class="cat-ico">🤲</div><div class="cat-ur">دعا و ذکر</div><span class="cat-en">Dua & Dhikr</span></div>
+        <div class="cat-box cat-h" data-category="Judiciary"><div class="cat-ico">⚖️</div><div class="cat-ur">قضا و عدالت</div><span class="cat-en">Judiciary</span></div>
+        <div class="cat-box cat-h" data-category="Children"><div class="cat-ico">👶</div><div class="cat-ur">بچوں کے مسائل</div><span class="cat-en">Children</span></div>
+        <div class="cat-box cat-h" data-category="Women"><div class="cat-ico">👩</div><div class="cat-ur">خواتین</div><span class="cat-en">Women's Issues</span></div>
+        <div class="cat-box cat-h" data-category="Health"><div class="cat-ico">🏥</div><div class="cat-ur">طب و صحت</div><span class="cat-en">Health</span></div>
+        <div class="cat-box cat-h" data-category="Education"><div class="cat-ico">🎓</div><div class="cat-ur">علم و تعلیم</div><span class="cat-en">Education</span></div>
+        <div class="cat-box cat-h" data-category="Jihad"><div class="cat-ico">🕊️</div><div class="cat-ur">جہاد</div><span class="cat-en">Jihad</span></div>
+        <div class="cat-box cat-h" data-category="Will-Gift"><div class="cat-ico">🔖</div><div class="cat-ur">وصیت و ہبہ</div><span class="cat-en">Will & Gift</span></div>
+        <div class="cat-box cat-h" data-category="Buying-Selling"><div class="cat-ico">🛖</div><div class="cat-ur">خرید و فروخت</div><span class="cat-en">Buying & Selling</span></div>
+        <div class="cat-box cat-h" data-category="Slaughter"><div class="cat-ico">🌿</div><div class="cat-ur">ذبح و قربانی</div><span class="cat-en">Sacrifice</span></div>
+        <div class="cat-box cat-h" data-category="Funeral"><div class="cat-ico">🫀</div><div class="cat-ur">جنازہ و دفن</div><span class="cat-en">Funeral</span></div>
+        <div class="cat-box cat-h" data-category="Hijab"><div class="cat-ico">🧕</div><div class="cat-ur">حجاب و پردہ</div><span class="cat-en">Hijab</span></div>
+        <div class="cat-box cat-h" data-category="Modern"><div class="cat-ico">🌐</div><div class="cat-ur">جدید مسائل</div><span class="cat-en">Modern Issues</span></div>
+        <div class="cat-box cat-h" data-category="Technology"><div class="cat-ico">📱</div><div class="cat-ur">ٹیکنالوجی</div><span class="cat-en">Technology</span></div>
+        <div class="cat-box cat-h" data-category="Banking"><div class="cat-ico">🏦</div><div class="cat-ur">بینکاری و سود</div><span class="cat-en">Banking</span></div>
+        <div class="cat-box cat-h" data-category="Contracts"><div class="cat-ico">🤝</div><div class="cat-ur">معاملات</div><span class="cat-en">Contracts</span></div>
+        <div class="cat-box cat-h" data-category="Travel"><div class="cat-ico">🧳</div><div class="cat-ur">سفر کے مسائل</div><span class="cat-en">Travel</span></div>
+        <div class="cat-box cat-h" data-category="Festivals"><div class="cat-ico">🎉</div><div class="cat-ur">تہوار</div><span class="cat-en">Festivals</span></div>
+        <div class="cat-box cat-h" data-category="Quran"><div class="cat-ico">📖</div><div class="cat-ur">قرآن و تفسیر</div><span class="cat-en">Quran & Tafsir</span></div>
+        <div class="cat-box cat-h" data-category="Hadith"><div class="cat-ico">🕯️</div><div class="cat-ur">سنت و حدیث</div><span class="cat-en">Hadith</span></div>
+        <div class="cat-box cat-h" data-category="Ramadan"><div class="cat-ico">🌙</div><div class="cat-ur">رمضان</div><span class="cat-en">Ramadan</span></div>
+        <div class="cat-box cat-h" data-category="Charity"><div class="cat-ico">🎁</div><div class="cat-ur">صدقہ و خیرات</div><span class="cat-en">Charity</span></div>
+        <div class="cat-box cat-h" data-category="Household"><div class="cat-ico">🏡</div><div class="cat-ur">گھریلو مسائل</div><span class="cat-en">Household</span></div>
+        <div class="cat-box cat-h" data-category="Illness"><div class="cat-ico">🤕</div><div class="cat-ur">مرض و معذوری</div><span class="cat-en">Illness</span></div>
+      </div>
+
+      <button class="btn-more" onclick="toggleCats()">
+        <span id="more-lbl">See More ▼</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ⑤ BOOKS BUTTON PAGE LINK -->
+  <section id="sec-books">
+    <div class="sw">
+      <div class="sec-hd">
+        <span class="ur">فقہ شافعی کی معتبر کتابیں</span>
+        <span class="en">Reliable Books of Fiqh e Shafay</span>
+        <div class="sec-bar"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-hd-text">
+            <span class="ur">کتابیں ڈاؤن لوڈ کریں</span>
+            <span class="en">Open Books Download Page</span>
+          </div>
+          <div class="card-hd-ico">📚</div>
+        </div>
+
+        <div class="masail-body" style="text-align:center;">
+          <p class="masail-ex" style="border-right:none;padding-right:0;">
+            اس صفحے میں فقہ شافعی کی معتبر کتابیں موجود ہوں گی جہاں سے صارف کتابیں دیکھ اور ڈاؤن لوڈ کر سکے گا۔
+          </p>
+
+          <button class="btn-rm" id="books-page-btn" type="button">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>
+              <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>
+            </svg>
+            OPEN BOOKS PAGE ›
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ⑥ CONTACT -->
+  <section id="sec-contact">
+    <div class="sw">
+      <div class="sec-hd">
+        <span class="ur">رابطہ کریں</span>
+        <span class="en">Contact Us</span>
+        <div class="sec-bar"></div>
+      </div>
+
+      <div class="ct-grid">
+        <div class="ct-tile">
+          <div class="ct-ico-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#b07d20" stroke-width="2" stroke-linecap="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.35 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.6a16 16 0 0 0 6 6l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.73 16z"/></svg>
+          </div>
+          <div class="ct-lbl">PHONE</div>
+          <div class="ct-val"><a href="tel:+919322576336">+91 93225 76336</a></div>
+        </div>
+
+        <div class="ct-tile">
+          <div class="ct-ico-wrap">
+            <svg width="23" height="23" viewBox="0 0 24 24" fill="#b07d20"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
+          </div>
+          <div class="ct-lbl">WHATSAPP</div>
+          <div class="ct-val"><a href="https://wa.me/919322576336" target="_blank">+91 93225 76336</a></div>
+        </div>
+
+        <div class="ct-tile">
+          <div class="ct-ico-wrap">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#b07d20" stroke-width="2" stroke-linecap="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </div>
+          <div class="ct-lbl">EMAIL</div>
+          <div class="ct-val"><a href="mailto:faisalvanu18@gmail.com">faisalvanu18@gmail.com</a></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="ft-ico">🕌</div>
+    <div class="ft-name">مسائل اسلامیہ</div>
+    <div class="ft-sub">Zere Sarparasti Hazrat Mufti Rafiq Purkar Madni</div>
+    <nav class="ft-nav">
+      <a href="#sec-home">Home</a>
+      <a href="#sec-daily">Daily Masail</a>
+      <a href="#sec-ask">Ask Masail</a>
+      <a href="#sec-cats">Categories</a>
+      <a href="#sec-books">Download Books</a>
+      <a href="#sec-contact">Contact</a>
+    </nav>
+    <div class="ft-rule"></div>
+    <div class="ft-copy">© 2026 Masail Islamia — All Rights Reserved</div>
+  </footer>
+
+</div>
+
+<div id="toast"></div>
+<script src="main.js"></script>
+</body>
+</html>

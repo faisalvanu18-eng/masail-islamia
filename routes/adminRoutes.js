@@ -1,0 +1,894 @@
+const express = require('express');
+const router = express.Router();
+const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+
+const Admin = require('../models/Admin');
+const Masail = require('../models/Masail');
+const Question = require('../models/Question');
+const Book = require('../models/book');
+
+const nodemailer = require('nodemailer');
+const { protect } = require('../middleware/auth');
+
+
+// ─────────────────────────────────────────────
+// Ensure upload folders exist
+// ─────────────────────────────────────────────
+const booksUploadDir = path.join(__dirname, '../uploads/books');
+
+if (!fs.existsSync(path.join(__dirname, '../uploads'))) {
+  fs.mkdirSync(path.join(__dirname, '../uploads'), { recursive: true });
+}
+
+if (!fs.existsSync(booksUploadDir)) {
+  fs.mkdirSync(booksUploadDir, { recursive: true });
+}
+
+
+// ─────────────────────────────────────────────
+// Email transporter
+// ─────────────────────────────────────────────
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST,
+  port: parseInt(process.env.EMAIL_PORT) || 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
+  }
+});
+
+
+// ─────────────────────────────────────────────
+// Multer storage for PDF books
+// ─────────────────────────────────────────────
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, booksUploadDir);
+  },
+  filename: (req, file, cb) => {
+    const safeName = file.originalname.replace(/\s+/g, '-');
+    cb(null, `${Date.now()}-${safeName}`);
+  }
+});
+
+const upload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype === 'application/pdf') {
+      cb(null, true);
+    } else {
+      cb(new Error('Only PDF files are allowed'));
+    }
+  },
+  limits: {
+    fileSize: 50 * 1024 * 1024
+  }
+});
+
+
+// ══════════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════════
+
+// POST /api/admin/login
+router.post('/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Username and password are required'
+      });
+    }
+
+    const admin = await Admin.findOne({
+      username: username.toLowerCase()
+    }).select('+password');
+
+    if (!admin) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid username or password'
+      });
+    }
+
+    const isMatch = await admin.matchPassword(password);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid username or password'
+      });
+    }
+
+    if (!admin.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin account is disabled'
+      });
+    }
+
+    admin.lastLogin = new Date();
+    await admin.save();
+
+    const token = jwt.sign(
+      { id: admin._id },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRE || '7d' }
+    );
+
+    res.json({
+      success: true,
+      token,
+      admin: {
+        id: admin._id,
+        username: admin.username,
+        email: admin.email,
+        role: admin.role
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+
+// GET /api/admin/me
+router.get('/me', protect, async (req, res) => {
+  res.json({
+    success: true,
+    admin: req.admin
+  });
+});
+
+
+// ══════════════════════════════════════════════
+// DASHBOARD STATS
+// ══════════════════════════════════════════════
+
+// GET /api/admin/stats
+router.get('/stats', protect, async (req, res) => {
+  try {
+    const [
+      totalMasail,
+      publishedMasail,
+      unpublishedMasail,
+      totalQuestions,
+      pendingQuestions,
+      answeredQuestions,
+      totalBooks
+    ] = await Promise.all([
+      Masail.countDocuments(),
+      Masail.countDocuments({ isPublished: true }),
+      Masail.countDocuments({ isPublished: false }),
+      Question.countDocuments(),
+      Question.countDocuments({ status: 'pending' }),
+      Question.countDocuments({ status: 'answered' }),
+      Book.countDocuments()
+    ]);
+
+    const recentQuestions = await Question.find()
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .select('name topic status createdAt');
+
+    const recentMasail = await Masail.find()
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .select('masailNumber titleUrdu category isPublished createdAt');
+
+    res.json({
+      success: true,
+      data: {
+        totalMasail,
+        publishedMasail,
+        unpublishedMasail,
+        totalQuestions,
+        pendingQuestions,
+        answeredQuestions,
+        totalBooks,
+        recentQuestions,
+        recentMasail
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+
+// ══════════════════════════════════════════════
+// MASAIL MANAGEMENT
+// ══════════════════════════════════════════════
+
+// GET /api/admin/masail
+router.get('/masail', protect, async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      status,
+      category,
+      search
+    } = req.query;
+
+    const query = {};
+
+    if (status === 'published') query.isPublished = true;
+    if (status === 'unpublished') query.isPublished = false;
+    if (category) query.category = category;
+    if (search) query.$text = { $search: search };
+
+    const currentPage = Math.max(parseInt(page) || 1, 1);
+    const perPage = Math.max(parseInt(limit) || 20, 1);
+    const skip = (currentPage - 1) * perPage;
+
+    const total = await Masail.countDocuments(query);
+
+    const list = await Masail.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(perPage);
+
+    res.json({
+      success: true,
+      total,
+      page: currentPage,
+      pages: Math.ceil(total / perPage),
+      data: list
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+
+// GET /api/admin/masail/:id
+router.get('/masail/:id', protect, async (req, res) => {
+  try {
+    const masail = await Masail.findById(req.params.id);
+
+    if (!masail) {
+      return res.status(404).json({
+        success: false,
+        message: 'Masail not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: masail
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+
+// POST /api/admin/masail
+router.post('/masail', protect, async (req, res) => {
+  try {
+    const masail = await Masail.create(req.body);
+
+    res.status(201).json({
+      success: true,
+      message: 'Masail created successfully',
+      data: masail
+    });
+
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+
+// PUT /api/admin/masail/:id
+router.put('/masail/:id', protect, async (req, res) => {
+  try {
+    const masail = await Masail.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    );
+
+    if (!masail) {
+      return res.status(404).json({
+        success: false,
+        message: 'Masail not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Masail updated successfully',
+      data: masail
+    });
+
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+
+// DELETE /api/admin/masail/:id
+router.delete('/masail/:id', protect, async (req, res) => {
+  try {
+    const masail = await Masail.findById(req.params.id);
+
+    if (!masail) {
+      return res.status(404).json({
+        success: false,
+        message: 'Masail not found'
+      });
+    }
+
+    await masail.deleteOne();
+
+    res.json({
+      success: true,
+      message: 'Masail deleted successfully'
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+
+// PUT /api/admin/masail/:id/feature
+router.put('/masail/:id/feature', protect, async (req, res) => {
+  try {
+    await Masail.updateMany({}, { isFeatured: false });
+
+    const masail = await Masail.findByIdAndUpdate(
+      req.params.id,
+      { isFeatured: true },
+      { new: true }
+    );
+
+    if (!masail) {
+      return res.status(404).json({
+        success: false,
+        message: 'Masail not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Featured masail updated successfully',
+      data: masail
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+
+// ══════════════════════════════════════════════
+// QUESTION MANAGEMENT
+// ══════════════════════════════════════════════
+
+// GET /api/admin/questions
+router.get('/questions', protect, async (req, res) => {
+  try {
+    const {
+      page = 1,
+      limit = 20,
+      status,
+      search
+    } = req.query;
+
+    const query = {};
+
+    if (status) query.status = status;
+
+    if (search) {
+      query.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+        { phone: { $regex: search, $options: 'i' } },
+        { questionText: { $regex: search, $options: 'i' } },
+        { topic: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const currentPage = Math.max(parseInt(page) || 1, 1);
+    const perPage = Math.max(parseInt(limit) || 20, 1);
+    const skip = (currentPage - 1) * perPage;
+
+    const total = await Question.countDocuments(query);
+
+    const list = await Question.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(perPage);
+
+    res.json({
+      success: true,
+      total,
+      page: currentPage,
+      pages: Math.ceil(total / perPage),
+      data: list
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+
+// GET /api/admin/questions/:id
+router.get('/questions/:id', protect, async (req, res) => {
+  try {
+    const question = await Question.findById(req.params.id).populate('masailPostId');
+
+    if (!question) {
+      return res.status(404).json({
+        success: false,
+        message: 'Question not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: question
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+
+// PUT /api/admin/questions/:id/reply
+router.put('/questions/:id/reply', protect, async (req, res) => {
+  try {
+    const { replyText, adminNotes } = req.body;
+
+    if (!replyText) {
+      return res.status(400).json({
+        success: false,
+        message: 'Reply text is required'
+      });
+    }
+
+    const question = await Question.findById(req.params.id);
+
+    if (!question) {
+      return res.status(404).json({
+        success: false,
+        message: 'Question not found'
+      });
+    }
+
+    question.replyText = replyText;
+    question.adminNotes = adminNotes || question.adminNotes;
+    question.status = 'answered';
+    question.replySent = true;
+    question.replySentAt = new Date();
+
+    await question.save();
+
+    try {
+      await transporter.sendMail({
+        from: process.env.EMAIL_FROM,
+        to: question.email,
+        subject: 'Reply to Your Question — Masail Islamia',
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;background:#f5f0e8;padding:30px;border-radius:12px;">
+            <div style="background:#0d2b1a;padding:20px;border-radius:8px;text-align:center;margin-bottom:20px;">
+              <h2 style="color:#e8c97a;margin:0;">مسائل اسلامیہ</h2>
+              <p style="color:#c9a84c;margin:5px 0 0;font-size:12px;">MASAIL ISLAMIA</p>
+            </div>
+
+            <p>Dear <strong>${question.name}</strong>,</p>
+            <p>Your question has been answered by <strong>Hazrat Mufti Rafiq Purkar Madni</strong>.</p>
+
+            <div style="background:#fff;border-radius:8px;padding:16px;margin:16px 0;">
+              <p style="font-size:12px;color:#777;margin:0 0 8px;">YOUR QUESTION</p>
+              <p style="direction:rtl;text-align:right;margin:0;">${question.questionText}</p>
+            </div>
+
+            <div style="background:#f0fff4;border-radius:8px;padding:16px;margin:16px 0;">
+              <p style="font-size:12px;color:#2d6e47;margin:0 0 8px;">ANSWER — جواب</p>
+              <p style="direction:rtl;text-align:right;margin:0;">${replyText}</p>
+            </div>
+
+            <p style="font-size:13px">
+              📞 +91 9322576336 <br>
+              📧 faisalvanu18@gmail.com
+            </p>
+
+            <hr>
+            <p style="font-size:11px;color:#999;text-align:center;">© Masail Islamia</p>
+          </div>
+        `
+      });
+    } catch (mailError) {
+      console.log('Reply email failed:', mailError.message);
+    }
+
+    res.json({
+      success: true,
+      message: 'Reply sent successfully',
+      data: question
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+
+// PUT /api/admin/questions/:id/status
+router.put('/questions/:id/status', protect, async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    const allowedStatuses = ['pending', 'reviewed', 'answered', 'published'];
+
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status'
+      });
+    }
+
+    const question = await Question.findByIdAndUpdate(
+      req.params.id,
+      { status },
+      { new: true, runValidators: true }
+    );
+
+    if (!question) {
+      return res.status(404).json({
+        success: false,
+        message: 'Question not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Question status updated',
+      data: question
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+
+// PUT /api/admin/questions/:id/notes
+router.put('/questions/:id/notes', protect, async (req, res) => {
+  try {
+    const { adminNotes } = req.body;
+
+    const question = await Question.findByIdAndUpdate(
+      req.params.id,
+      { adminNotes: adminNotes || '' },
+      { new: true }
+    );
+
+    if (!question) {
+      return res.status(404).json({
+        success: false,
+        message: 'Question not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Notes updated successfully',
+      data: question
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+
+// DELETE /api/admin/questions/:id
+router.delete('/questions/:id', protect, async (req, res) => {
+  try {
+    const question = await Question.findById(req.params.id);
+
+    if (!question) {
+      return res.status(404).json({
+        success: false,
+        message: 'Question not found'
+      });
+    }
+
+    await question.deleteOne();
+
+    res.json({
+      success: true,
+      message: 'Question deleted successfully'
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+
+// ══════════════════════════════════════════════
+// BOOK MANAGEMENT
+// ══════════════════════════════════════════════
+
+// GET /api/admin/books
+router.get('/books', protect, async (req, res) => {
+  try {
+    const books = await Book.find().sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: books
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+
+// GET /api/admin/books/:id
+router.get('/books/:id', protect, async (req, res) => {
+  try {
+    const book = await Book.findById(req.params.id);
+
+    if (!book) {
+      return res.status(404).json({
+        success: false,
+        message: 'Book not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: book
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+
+// POST /api/admin/books
+router.post('/books', protect, upload.single('bookFile'), async (req, res) => {
+  try {
+    const {
+      titleUrdu,
+      titleEnglish,
+      authorUrdu,
+      category,
+      isPublished
+    } = req.body;
+
+    if (!titleUrdu || !titleEnglish || !authorUrdu || !category) {
+      return res.status(400).json({
+        success: false,
+        message: 'titleUrdu, titleEnglish, authorUrdu and category are required'
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'PDF file is required'
+      });
+    }
+
+    const book = await Book.create({
+      titleUrdu,
+      titleEnglish,
+      authorUrdu,
+      category,
+      fileName: req.file.filename,
+      fileUrl: `/uploads/books/${req.file.filename}`,
+      fileSize: req.file.size,
+      mimeType: req.file.mimetype,
+      isPublished: String(isPublished) === 'false' ? false : true
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Book uploaded successfully',
+      data: book
+    });
+
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+
+// PUT /api/admin/books/:id
+router.put('/books/:id', protect, async (req, res) => {
+  try {
+    const book = await Book.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    );
+
+    if (!book) {
+      return res.status(404).json({
+        success: false,
+        message: 'Book not found'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Book updated successfully',
+      data: book
+    });
+
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+
+// DELETE /api/admin/books/:id
+router.delete('/books/:id', protect, async (req, res) => {
+  try {
+    const book = await Book.findById(req.params.id);
+
+    if (!book) {
+      return res.status(404).json({
+        success: false,
+        message: 'Book not found'
+      });
+    }
+
+    if (book.fileName) {
+      const fullPath = path.join(booksUploadDir, book.fileName);
+      if (fs.existsSync(fullPath)) {
+        fs.unlinkSync(fullPath);
+      }
+    }
+
+    await book.deleteOne();
+
+    res.json({
+      success: true,
+      message: 'Book deleted successfully'
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+
+// ══════════════════════════════════════════════
+// ADMIN PASSWORD CHANGE
+// ══════════════════════════════════════════════
+
+// PUT /api/admin/change-password
+router.put('/change-password', protect, async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password and new password are required'
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 6 characters'
+      });
+    }
+
+    const admin = await Admin.findById(req.admin._id).select('+password');
+
+    if (!admin) {
+      return res.status(404).json({
+        success: false,
+        message: 'Admin not found'
+      });
+    }
+
+    const isMatch = await admin.matchPassword(currentPassword);
+
+    if (!isMatch) {
+      return res.status(400).json({
+        success: false,
+        message: 'Current password is incorrect'
+      });
+    }
+
+    admin.password = newPassword;
+    await admin.save();
+
+    res.json({
+      success: true,
+      message: 'Password changed successfully'
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+});
+
+
+module.exports = router;

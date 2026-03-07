@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="ur" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>کیٹیگری مسائل — Masail Category</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body data-page="category">
+
+  <!-- ══════════════ DETAIL PAGE ══════════════ -->
+  <div id="pgDetail">
+    <div class="dtl-bar">
+      <button class="btn-bk" onclick="closeDetail()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+        Back
+      </button>
+      <p class="dtl-bar-title">کیٹیگری مسائل — Category Masail</p>
+    </div>
+
+    <div class="dtl-wrap">
+      <div class="dtl-card">
+        <div class="dtl-head">
+          <span class="dtl-num" id="d-num">MASAIL NO. 001 — 07 MARCH 2026</span>
+          <h1 id="d-title">عنوان</h1>
+          <div class="dtl-tags">
+            <span class="dtag" id="d-cat">Category</span>
+            <span class="dtag" id="d-mad">Fiqh · Shafi</span>
+            <span class="dtag" id="d-date">07 March 2026</span>
+          </div>
+        </div>
+
+        <div class="dtl-body">
+          <div class="qa-lbl q">QUESTION — سوال</div>
+          <div class="dtl-q" id="d-q">سوال یہاں ظاہر ہوگا۔</div>
+
+          <div class="qa-lbl a">ANSWER — جواب</div>
+          <div class="dtl-a" id="d-a">جواب یہاں ظاہر ہوگا۔</div>
+
+          <div class="dtl-ref">
+            <div class="dtl-ref-lbl">REFERENCE — حوالہ</div>
+            <div class="dtl-ref-txt" id="d-ref">حوالہ یہاں ظاہر ہوگا۔</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ MAIN PAGE ══════════════ -->
+  <div id="pgMain">
+
+    <div class="nav-scrim" id="navScrim" onclick="closeNav()"></div>
+
+    <nav id="navDrawer">
+      <button class="nav-x" onclick="closeNav()">✕</button>
+      <div class="nav-brand">
+        <div class="nav-brand-ico">🕌</div>
+        <p class="nav-brand-name">مسائل اسلامیہ</p>
+      </div>
+      <a href="index.html"><span class="nd"></span>Home</a>
+      <a href="index.html#sec-daily"><span class="nd"></span>Daily Masail</a>
+      <a href="index.html#sec-ask"><span class="nd"></span>Ask Masail</a>
+      <a href="index.html#sec-cats"><span class="nd"></span>Categories</a>
+      <a href="books.html"><span class="nd"></span>Download Books</a>
+      <a href="index.html#sec-contact"><span class="nd"></span>Contact</a>
+    </nav>
+
+    <header>
+      <div class="hdr-in">
+        <div class="logo-wrap">
+          <div class="logo-orb">🕌</div>
+          <div class="logo-txt">
+            <span class="logo-ur">مسائل اسلامیہ</span>
+            <span class="logo-en">MASAIL ISLAMIA</span>
+          </div>
+        </div>
+        <button class="menu-btn" onclick="openNav()">
+          <div class="ham-lines"><span></span><span></span><span></span></div>MENU
+        </button>
+      </div>
+    </header>
+
+    <section id="sec-home">
+      <div class="hero-in">
+        <span class="hero-bism">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيمِ</span>
+        <div class="hero-bar"></div>
+        <p class="hero-ur" id="category-title">کیٹیگری</p>
+        <p class="hero-en">Category Masail Page</p>
+      </div>
+    </section>
+
+    <section id="sec-category-list">
+      <div class="sw">
+        <div class="sec-hd">
+          <span class="ur">اسی کیٹیگری کے مسائل</span>
+          <span class="en">Masail in this Category</span>
+          <div class="sec-bar"></div>
+        </div>
+
+        <div class="card" style="margin-bottom:20px;">
+          <div class="card-hd">
+            <div class="card-hd-text">
+              <span class="ur">کیٹیگری میں تلاش کریں</span>
+              <span class="en">Search inside Category</span>
+            </div>
+            <div class="card-hd-ico">🔎</div>
+          </div>
+
+          <div class="search-in">
+            <div class="search-grid" style="grid-template-columns: 1fr auto;">
+              <div class="fg">
+                <label>تلاش <span class="lbe">· Search</span></label>
+                <input id="category-search" type="text" placeholder="مثلاً: نماز، وضو، امام">
+              </div>
+
+              <button class="btn-srch" type="button" onclick="searchInCategory()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                تلاش · Search
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div id="category-empty" class="card" style="display:none;">
+          <div class="masail-body">
+            <p class="masail-ex" style="border-right:none;padding-right:0;text-align:center;">
+              اس کیٹیگری میں ابھی کوئی مسئلہ موجود نہیں ہے۔
+            </p>
+          </div>
+        </div>
+
+        <div id="category-results" style="display:grid; gap:18px;"></div>
+      </div>
+    </section>
+
+    <footer>
+      <div class="ft-ico">🕌</div>
+      <div class="ft-name">مسائل اسلامیہ</div>
+      <div class="ft-sub">Zere Sarparasti Hazrat Mufti Rafiq Purkar Madni</div>
+      <nav class="ft-nav">
+        <a href="index.html">Home</a>
+        <a href="index.html#sec-daily">Daily Masail</a>
+        <a href="index.html#sec-ask">Ask Masail</a>
+        <a href="index.html#sec-cats">Categories</a>
+        <a href="books.html">Download Books</a>
+        <a href="index.html#sec-contact">Contact</a>
+      </nav>
+      <div class="ft-rule"></div>
+      <div class="ft-copy">© 2026 Masail Islamia — All Rights Reserved</div>
+    </footer>
+
+  </div>
+
+  <div id="toast"></div>
+  <script src="main.js"></script>
+</body>
+</html>

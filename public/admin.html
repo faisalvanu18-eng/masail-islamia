@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin Panel — Masail Islamia</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    .admin-wrap{max-width:1200px;margin:0 auto;padding:28px 16px}
+    .admin-grid{display:grid;grid-template-columns:320px 1fr;gap:18px}
+    @media(max-width:900px){.admin-grid{grid-template-columns:1fr}}
+    .admin-side{display:flex;flex-direction:column;gap:16px}
+    .admin-main{display:flex;flex-direction:column;gap:18px}
+    .admin-hidden{display:none!important}
+    .admin-topbar{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      margin-bottom:18px;flex-wrap:wrap
+    }
+    .admin-actions{display:flex;gap:10px;flex-wrap:wrap}
+    .admin-btn{
+      display:inline-flex;align-items:center;justify-content:center;gap:8px;
+      padding:10px 16px;border:none;border-radius:10px;cursor:pointer;
+      font-family:var(--fui);font-size:.85rem;font-weight:600
+    }
+    .admin-btn.primary{background:linear-gradient(135deg,var(--brown),var(--teal));color:var(--gold-bg);border:1.5px solid var(--gold)}
+    .admin-btn.secondary{background:var(--white);color:var(--brown);border:1.5px solid var(--bdr-m)}
+    .admin-btn.danger{background:#7b1d1d;color:#fff;border:1.5px solid #a53a3a}
+    .admin-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+    @media(max-width:900px){.admin-stats{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:560px){.admin-stats{grid-template-columns:1fr}}
+    .stat-box{background:var(--white);border:1px solid var(--bdr);border-radius:14px;padding:16px;box-shadow:var(--sh-sm)}
+    .stat-label{font-family:var(--fui);font-size:.75rem;color:var(--txt-s);direction:ltr}
+    .stat-value{font-family:var(--fe);font-size:1.6rem;color:var(--brown);margin-top:8px}
+    .admin-list{display:grid;gap:12px}
+    .list-card{
+      background:var(--white);border:1px solid var(--bdr);border-radius:14px;
+      padding:14px;box-shadow:var(--sh-sm)
+    }
+    .list-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap}
+    .list-title{font-family:var(--fu);font-size:1rem;color:var(--brown);line-height:1.8}
+    .list-sub{font-family:var(--fui);font-size:.72rem;color:var(--txt-s);direction:ltr}
+    .list-row-actions{display:flex;gap:8px;flex-wrap:wrap}
+    .mini-btn{
+      padding:7px 12px;border-radius:8px;border:1px solid var(--bdr-m);
+      background:var(--iv0);cursor:pointer;font-family:var(--fui);font-size:.75rem
+    }
+    .mini-btn.del{background:#fff1f1;border-color:#d5aaaa;color:#8f2222}
+    .mini-btn.edit{background:#eef8ff;border-color:#b8d4ea;color:#1d5fa8}
+    .mini-btn.view{background:#eef7f0;border-color:#b8d7bf;color:#1a7a3a}
+    .admin-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    @media(max-width:700px){.admin-form-grid{grid-template-columns:1fr}}
+    .admin-badge{
+      display:inline-block;padding:4px 10px;border-radius:999px;
+      font-size:.72rem;font-family:var(--fui);background:var(--gold-bg);color:var(--gold)
+    }
+    .admin-section-title{font-family:var(--fu);font-size:1rem;color:var(--brown)}
+    .admin-login-box{max-width:460px;margin:50px auto}
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="hdr-in">
+      <div class="logo-wrap">
+        <div class="logo-orb">🛠️</div>
+        <div class="logo-txt">
+          <span class="logo-ur">ایڈمن پینل</span>
+          <span class="logo-en">MASAIL ISLAMIA ADMIN</span>
+        </div>
+      </div>
+      <a href="index.html" class="menu-btn" style="text-decoration:none;">
+        <div class="ham-lines"><span></span><span></span><span></span></div>WEBSITE
+      </a>
+    </div>
+  </header>
+
+  <div class="admin-wrap">
+
+    <!-- LOGIN -->
+    <section id="admin-login-section" class="admin-login-box">
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-hd-text">
+            <span class="ur">ایڈمن لاگ اِن</span>
+            <span class="en">Admin Login</span>
+          </div>
+          <div class="card-hd-ico">🔐</div>
+        </div>
+        <div class="form-in">
+          <div class="fg" style="margin-bottom:12px;">
+            <label>یوزرنیم <span class="lbe">· Username</span></label>
+            <input id="admin-username" type="text" placeholder="admin" style="direction:ltr;text-align:left;">
+          </div>
+
+          <div class="fg" style="margin-bottom:14px;">
+            <label>پاس ورڈ <span class="lbe">· Password</span></label>
+            <input id="admin-password" type="password" placeholder="********" style="direction:ltr;text-align:left;">
+          </div>
+
+          <button class="btn-sub" id="admin-login-btn" type="button" onclick="adminLogin()">
+            <span>لاگ اِن · LOGIN</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section id="admin-dashboard-section" class="admin-hidden">
+      <div class="admin-topbar">
+        <div>
+          <div class="admin-section-title">ایڈمن ڈیش بورڈ</div>
+          <div class="list-sub" id="admin-welcome">Logged in</div>
+        </div>
+        <div class="admin-actions">
+          <button class="admin-btn secondary" type="button" onclick="showPanel('panel-dashboard')">Dashboard</button>
+          <button class="admin-btn secondary" type="button" onclick="showPanel('panel-masail')">Masail</button>
+          <button class="admin-btn secondary" type="button" onclick="showPanel('panel-questions')">Questions</button>
+          <button class="admin-btn secondary" type="button" onclick="showPanel('panel-books')">Books</button>
+          <button class="admin-btn danger" type="button" onclick="adminLogout()">Logout</button>
+        </div>
+      </div>
+
+      <div class="admin-grid">
+        <div class="admin-side">
+
+          <div class="card">
+            <div class="card-hd">
+              <div class="card-hd-text">
+                <span class="ur">فوری اعمال</span>
+                <span class="en">Quick Actions</span>
+              </div>
+              <div class="card-hd-ico">⚡</div>
+            </div>
+            <div class="form-in" style="display:grid;gap:10px;">
+              <button class="admin-btn primary" type="button" onclick="showPanel('panel-masail');resetMasailForm()">Add Masail</button>
+              <button class="admin-btn primary" type="button" onclick="showPanel('panel-books');resetBookForm()">Upload Book</button>
+              <button class="admin-btn primary" type="button" onclick="showPanel('panel-questions');loadQuestions()">View Questions</button>
+              <button class="admin-btn secondary" type="button" onclick="loadStats();loadMasail();loadQuestions();loadBooks()">Refresh All</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-hd">
+              <div class="card-hd-text">
+                <span class="ur">پاس ورڈ تبدیل کریں</span>
+                <span class="en">Change Password</span>
+              </div>
+              <div class="card-hd-ico">🔑</div>
+            </div>
+            <div class="form-in">
+              <div class="fg" style="margin-bottom:10px;">
+                <label>موجودہ پاس ورڈ <span class="lbe">· Current</span></label>
+                <input id="current-password" type="password" style="direction:ltr;text-align:left;">
+              </div>
+              <div class="fg" style="margin-bottom:14px;">
+                <label>نیا پاس ورڈ <span class="lbe">· New</span></label>
+                <input id="new-password" type="password" style="direction:ltr;text-align:left;">
+              </div>
+              <button class="admin-btn primary" type="button" onclick="changePassword()">Update Password</button>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="admin-main">
+
+          <!-- DASHBOARD PANEL -->
+          <div id="panel-dashboard">
+            <div class="admin-stats">
+              <div class="stat-box"><div class="stat-label">TOTAL MASAIL</div><div class="stat-value" id="stat-total-masail">0</div></div>
+              <div class="stat-box"><div class="stat-label">PUBLISHED</div><div class="stat-value" id="stat-published-masail">0</div></div>
+              <div class="stat-box"><div class="stat-label">QUESTIONS</div><div class="stat-value" id="stat-total-questions">0</div></div>
+              <div class="stat-box"><div class="stat-label">BOOKS</div><div class="stat-value" id="stat-total-books">0</div></div>
+            </div>
+
+            <div class="card" style="margin-top:18px;">
+              <div class="card-hd">
+                <div class="card-hd-text">
+                  <span class="ur">حالیہ سوالات</span>
+                  <span class="en">Recent Questions</span>
+                </div>
+                <div class="card-hd-ico">❓</div>
+              </div>
+              <div class="form-in">
+                <div id="recent-questions" class="admin-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- MASAIL PANEL -->
+          <div id="panel-masail" class="admin-hidden">
+            <div class="card">
+              <div class="card-hd">
+                <div class="card-hd-text">
+                  <span class="ur">مسئلہ شامل کریں / ترمیم کریں</span>
+                  <span class="en">Add / Edit Masail</span>
+                </div>
+                <div class="card-hd-ico">📘</div>
+              </div>
+              <div class="form-in">
+                <input type="hidden" id="masail-id">
+
+                <div class="admin-form-grid">
+                  <div class="fg">
+                    <label>عنوان اردو <span class="lbe">· Title Urdu</span></label>
+                    <input id="m-titleUrdu" type="text">
+                  </div>
+
+                  <div class="fg">
+                    <label>کیٹیگری <span class="lbe">· Category</span></label>
+                    <select id="m-category">
+                      <option value="Namaz">Namaz</option>
+                      <option value="Wazu">Wazu</option>
+                      <option value="Roza">Roza</option>
+                      <option value="Zakat">Zakat</option>
+                      <option value="Hajj">Hajj</option>
+                      <option value="Nikah">Nikah</option>
+                      <option value="Talaq">Talaq</option>
+                      <option value="Halal-Haram">Halal-Haram</option>
+                      <option value="Business">Business</option>
+                      <option value="Inheritance">Inheritance</option>
+                      <option value="Aqeedah">Aqeedah</option>
+                      <option value="Dua-Dhikr">Dua-Dhikr</option>
+                      <option value="Judiciary">Judiciary</option>
+                      <option value="Children">Children</option>
+                      <option value="Women">Women</option>
+                      <option value="Health">Health</option>
+                      <option value="Education">Education</option>
+                      <option value="Jihad">Jihad</option>
+                      <option value="Will-Gift">Will-Gift</option>
+                      <option value="Buying-Selling">Buying-Selling</option>
+                      <option value="Slaughter">Slaughter</option>
+                      <option value="Funeral">Funeral</option>
+                      <option value="Hijab">Hijab</option>
+                      <option value="Modern">Modern</option>
+                      <option value="Technology">Technology</option>
+                      <option value="Banking">Banking</option>
+                      <option value="Contracts">Contracts</option>
+                      <option value="Travel">Travel</option>
+                      <option value="Festivals">Festivals</option>
+                      <option value="Quran">Quran</option>
+                      <option value="Hadith">Hadith</option>
+                      <option value="Ramadan">Ramadan</option>
+                      <option value="Charity">Charity</option>
+                      <option value="Household">Household</option>
+                      <option value="Illness">Illness</option>
+                      <option value="Political">Political</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="fg" style="margin-top:12px;">
+                  <label>سوال اردو <span class="lbe">· Question Urdu</span></label>
+                  <textarea id="m-questionUrdu"></textarea>
+                </div>
+
+                <div class="fg" style="margin-top:12px;">
+                  <label>جواب اردو <span class="lbe">· Answer Urdu</span></label>
+                  <textarea id="m-answerUrdu"></textarea>
+                </div>
+
+                <div class="admin-form-grid" style="margin-top:12px;">
+                  <div class="fg">
+                    <label>حوالہ <span class="lbe">· Reference</span></label>
+                    <input id="m-reference" type="text">
+                  </div>
+                  <div class="fg">
+                    <label>مذہب <span class="lbe">· Madhab</span></label>
+                    <input id="m-madhab" type="text" value="Shafi">
+                  </div>
+                </div>
+
+                <div class="admin-form-grid" style="margin-top:12px;">
+                  <div class="fg">
+                    <label>Published</label>
+                    <select id="m-isPublished">
+                      <option value="true">Yes</option>
+                      <option value="false">No</option>
+                    </select>
+                  </div>
+                  <div class="fg">
+                    <label>Featured</label>
+                    <select id="m-isFeatured">
+                      <option value="false">No</option>
+                      <option value="true">Yes</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
+                  <button class="admin-btn primary" type="button" onclick="saveMasail()">Save Masail</button>
+                  <button class="admin-btn secondary" type="button" onclick="resetMasailForm()">Reset</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card" style="margin-top:18px;">
+              <div class="card-hd">
+                <div class="card-hd-text">
+                  <span class="ur">تمام مسائل</span>
+                  <span class="en">All Masail</span>
+                </div>
+                <div class="card-hd-ico">🗂️</div>
+              </div>
+              <div class="form-in">
+                <div id="masail-list" class="admin-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- QUESTIONS PANEL -->
+          <div id="panel-questions" class="admin-hidden">
+            <div class="card">
+              <div class="card-hd">
+                <div class="card-hd-text">
+                  <span class="ur">موصولہ سوالات</span>
+                  <span class="en">Received Questions</span>
+                </div>
+                <div class="card-hd-ico">✉️</div>
+              </div>
+              <div class="form-in">
+                <div id="questions-list" class="admin-list"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- BOOKS PANEL -->
+          <div id="panel-books" class="admin-hidden">
+            <div class="card">
+              <div class="card-hd">
+                <div class="card-hd-text">
+                  <span class="ur">کتاب اپلوڈ کریں</span>
+                  <span class="en">Upload Book</span>
+                </div>
+                <div class="card-hd-ico">📚</div>
+              </div>
+              <div class="form-in">
+                <input type="hidden" id="book-id">
+
+                <div class="admin-form-grid">
+                  <div class="fg">
+                    <label>کتاب نام اردو <span class="lbe">· Title Urdu</span></label>
+                    <input id="b-titleUrdu" type="text">
+                  </div>
+                  <div class="fg">
+                    <label>کتاب نام انگلش <span class="lbe">· Title English</span></label>
+                    <input id="b-titleEnglish" type="text" style="direction:ltr;text-align:left;">
+                  </div>
+                </div>
+
+                <div class="admin-form-grid" style="margin-top:12px;">
+                  <div class="fg">
+                    <label>مصنف اردو <span class="lbe">· Author Urdu</span></label>
+                    <input id="b-authorUrdu" type="text">
+                  </div>
+                  <div class="fg">
+                    <label>کیٹیگری <span class="lbe">· Category</span></label>
+                    <input id="b-category" type="text" value="Other" style="direction:ltr;text-align:left;">
+                  </div>
+                </div>
+
+                <div class="admin-form-grid" style="margin-top:12px;">
+                  <div class="fg">
+                    <label>PDF File</label>
+                    <input id="b-file" type="file" accept="application/pdf" style="direction:ltr;text-align:left;">
+                  </div>
+                  <div class="fg">
+                    <label>Published</label>
+                    <select id="b-isPublished">
+                      <option value="true">Yes</option>
+                      <option value="false">No</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;">
+                  <button class="admin-btn primary" type="button" onclick="saveBook()">Upload Book</button>
+                  <button class="admin-btn secondary" type="button" onclick="resetBookForm()">Reset</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card" style="margin-top:18px;">
+              <div class="card-hd">
+                <div class="card-hd-text">
+                  <span class="ur">تمام کتابیں</span>
+                  <span class="en">All Books</span>
+                </div>
+                <div class="card-hd-ico">📖</div>
+              </div>
+              <div class="form-in">
+                <div id="books-list-admin" class="admin-list"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="toast"></div>
+  <script src="admin.js"></script>
+</body>
+</html>
