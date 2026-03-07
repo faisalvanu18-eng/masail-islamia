@@ -341,19 +341,7 @@ async function submitQ() {
   const phone = getVal('ask-phone');
   const topic = getVal('ask-topic');
   const qtext = getVal('ask-q');
-  const res = await fetch(`${API}/questions`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ name, email, phone, topic, questionText: qtext })
-});
 
-const json = await res.json();
-
-if (json.success) {
-  showToast('آپ کا سوال کامیابی سے بھیج دیا گیا ✓');
-} else {
-  showToast(json.message || 'Server error, please try again later');
-}
   if (!name || !email || !phone || !qtext) {
     showToast('تمام ضروری خانے پُر کریں — Fill all fields');
     return;
@@ -383,23 +371,17 @@ if (json.success) {
     if (json.success) {
       showToast('آپ کا سوال کامیابی سے بھیج دیا گیا ✓');
 
-      const n = document.getElementById('ask-name');
-      const e = document.getElementById('ask-email');
-      const p = document.getElementById('ask-phone');
-      const q = document.getElementById('ask-q');
-      const t = document.getElementById('ask-topic');
-
-      if (n) n.value = '';
-      if (e) e.value = '';
-      if (p) p.value = '';
-      if (q) q.value = '';
-      if (t) t.selectedIndex = 0;
+      document.getElementById('ask-name').value = '';
+      document.getElementById('ask-email').value = '';
+      document.getElementById('ask-phone').value = '';
+      document.getElementById('ask-q').value = '';
+      document.getElementById('ask-topic').selectedIndex = 0;
     } else {
-      showToast(json.message || 'Error sending question');
+      showToast(json.message || 'Server error, please try again later');
     }
   } catch (err) {
     console.error('submitQ error:', err);
-    showToast('Server error. Please try again.');
+    showToast('Server error, please try again later');
   } finally {
     btn.disabled = false;
     btn.innerHTML = `
