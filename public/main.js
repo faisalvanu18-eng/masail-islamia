@@ -336,7 +336,7 @@ function renderBooks(list) {
    ASK FATWA SUBMIT
    ───────────────────────────────────────────── */
 async function submitQ() {
-  const name  = getVal('ask-name');
+  const name = getVal('ask-name');
   const email = getVal('ask-email');
   const phone = getVal('ask-phone');
   const topic = getVal('ask-topic');
@@ -348,6 +348,7 @@ async function submitQ() {
   }
 
   const btn = document.getElementById('sub-btn');
+  if (!btn) return;
 
   btn.disabled = true;
   btn.innerHTML = '<span class="spin"></span> ارسال ہو رہا ہے...';
@@ -356,7 +357,13 @@ async function submitQ() {
     const res = await fetch(`${API}/questions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, phone, topic, questionText: qtext })
+      body: JSON.stringify({
+        name,
+        email,
+        phone,
+        topic,
+        questionText: qtext
+      })
     });
 
     const json = await res.json();
@@ -364,30 +371,34 @@ async function submitQ() {
     if (json.success) {
       showToast('آپ کا سوال کامیابی سے بھیج دیا گیا ✓');
 
-      document.getElementById('ask-name').value = '';
-      document.getElementById('ask-email').value = '';
-      document.getElementById('ask-phone').value = '';
-      document.getElementById('ask-q').value = '';
-      document.getElementById('ask-topic').selectedIndex = 0;
+      const n = document.getElementById('ask-name');
+      const e = document.getElementById('ask-email');
+      const p = document.getElementById('ask-phone');
+      const q = document.getElementById('ask-q');
+      const t = document.getElementById('ask-topic');
 
+      if (n) n.value = '';
+      if (e) e.value = '';
+      if (p) p.value = '';
+      if (q) q.value = '';
+      if (t) t.selectedIndex = 0;
     } else {
       showToast(json.message || 'Error sending question');
     }
-
   } catch (err) {
+    console.error('submitQ error:', err);
     showToast('Server error. Please try again.');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="22" y1="2" x2="11" y2="13"></line>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+      </svg>
+      <span>سوال بھیجیں · SUBMIT</span>
+    `;
   }
-
-  /* ALWAYS reset button */
-  btn.disabled = false;
-  btn.innerHTML = `
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-  <line x1="22" y1="2" x2="11" y2="13"/>
-  <polygon points="22 2 15 22 11 13 2 9 22 2"/>
-  </svg>
-  <span>سوال بھیجیں · SUBMIT</span>`;
 }
-
 /* ─────────────────────────────────────────────
    UTILS
    ───────────────────────────────────────────── */
