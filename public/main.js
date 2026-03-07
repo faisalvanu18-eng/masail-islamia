@@ -388,44 +388,6 @@ async function submitQ() {
   <span>سوال بھیجیں · SUBMIT</span>`;
 }
 
-
-/* ─────────────────────────────────────────────
-   OLD SEARCH SECTION
-   Keeping function only if button still exists,
-   but you said you want Find Masail removed from UI
-   ───────────────────────────────────────────── */
-async function doSearch() {
-  const kw = getVal('s-kw');
-  const date = getVal('s-date');
-  const month = getVal('s-month');
-
-  if (!kw && !date && !month) {
-    showToast('تلاش کے لیے کوئی لفظ درج کریں');
-    return;
-  }
-
-  showToast('تلاش جاری ہے — Searching...');
-
-  try {
-    const p = new URLSearchParams();
-    if (kw) p.set('keyword', kw);
-    if (date) p.set('date', date);
-    if (month) p.set('month', month);
-
-    const res = await fetch(`${API}/masail?${p.toString()}`);
-    const json = await res.json();
-
-    if (json.success) {
-      showToast(`${json.total} نتائج ملے — ${json.total} results found`);
-    } else {
-      showToast('کوئی نتیجہ نہیں ملا');
-    }
-  } catch (error) {
-    showToast('تلاش مکمل ہوئی');
-  }
-}
-
-
 /* ─────────────────────────────────────────────
    UTILS
    ───────────────────────────────────────────── */
