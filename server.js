@@ -5,81 +5,104 @@ const path = require('path');
 const connectDB = require('./config/db');
 const Admin = require('./models/Admin');
 
-// ── Connect Database ──
-connectDB();
+// Routes
+const masailRoutes = require('./routes/masailRoutes');
+const questionRoutes = require('./routes/questionRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const bookRoutes = require('./routes/bookRoutes');
 
 const app = express();
 
-// ── Middleware ──
+// Connect MongoDB
+connectDB();
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 app.use(cors({
   origin: [
-    process.env.FRONTEND_URL || 'http://localhost:3000',
+    process.env.FRONTEND_URL || 'http://localhost:5500',
     'http://127.0.0.1:5500',
     'http://localhost:5500',
     'null'
   ],
-  credentials: true,
+  credentials: true
 }));
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// ── Serve uploaded files ──
+// Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// ── API Routes ──
-app.use('/api/masail', require('./routes/masailRoutes'));
-app.use('/api/questions', require('./routes/questionRoutes'));
-app.use('/api/admin', require('./routes/adminRoutes'));
-app.use('/api/books', require('./routes/bookRoutes'));
+// Serve frontend static files
+app.use(express.static(path.join(__dirname, 'public')));
 
-// ── Health check ──
+// API Routes
+app.use('/api/masail', masailRoutes);
+app.use('/api/questions', questionRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/books', bookRoutes);
+
+// Health route
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
     message: 'Masail Islamia API is running',
-    time: new Date()
+    time: new Date().toISOString()
   });
 });
 
-// ── 404 handler ──
-app.use((req, res) => {
+// Frontend routes
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.get('/books', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'books.html'));
+});
+
+app.get('/category', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'category.html'));
+});
+
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// 404 for API only
+app.use('/api/*', (req, res) => {
   res.status(404).json({
     success: false,
     message: 'Route not found'
   });
 });
 
-// ── Global error handler ──
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    success: false,
-    message: err.message || 'Server Error'
-  });
+// Fallback to frontend
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// ── Start server ──
+// Start server
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, async () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
-  console.log(`📖 API Health: http://localhost:${PORT}/api/health`);
+  console.log(`📘 API Health: http://localhost:${PORT}/api/health`);
 
   try {
-    const username = process.env.ADMIN_USERNAME || 'admin';
-    const adminExists = await Admin.findOne({ username });
+    const adminExists = await Admin.findOne({
+      username: process.env.ADMIN_USERNAME || 'admin'
+    });
 
     if (!adminExists) {
       await Admin.create({
-        username,
+        username: process.env.ADMIN_USERNAME || 'admin',
         password: process.env.ADMIN_PASSWORD || 'admin123',
-        email: 'faisalvanu18@gmail.com',
-        role: 'superadmin',
+        email: process.env.EMAIL_USER || 'faisalvanu18@gmail.com',
+        role: 'superadmin'
       });
 
       console.log('✅ Default admin created');
-      console.log(`👤 Username: ${username}`);
+      console.log(`👤 Username: ${process.env.ADMIN_USERNAME || 'admin'}`);
       console.log(`🔑 Password: ${process.env.ADMIN_PASSWORD || 'admin123'}`);
       console.log('⚠️ Please change password after first login');
     }
