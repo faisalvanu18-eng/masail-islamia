@@ -2,7 +2,7 @@
    MASAIL ISLAMIA — main.js
    ============================================================ */
 
-const API = 'http://localhost:5000/api';
+const API = 'https://masail-islamia.onrender.com/api';
 
 /* ─────────────────────────────────────────────
    BOOT
