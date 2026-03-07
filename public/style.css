@@ -648,3 +648,10 @@ footer {
   animation:rot .7s linear infinite;
 }
 @keyframes rot{to{transform:rotate(360deg)}}
+body,
+h1, h2, h3, h4, h5, h6,
+p, div, span, a, button,
+input, textarea, select, label,
+li, td, th {
+  font-family: 'Jameel Noori Nastaleeq', serif !important;
+}
