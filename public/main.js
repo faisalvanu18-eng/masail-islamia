@@ -60,12 +60,12 @@ function closeDetail() {
    ───────────────────────────────────────────── */
 async function loadFeatured() {
   try {
-    const res = await fetch(`${API}/masail/featured`);
+    const res = await fetch(`${API}/masail`);
     const json = await res.json();
 
     if (!json.success) return;
 
-    const m = json.data;
+    const m = json.data[0];
     window._masail = m;
 
     setText('masail-date', fmtDate(m.publishedDate));
