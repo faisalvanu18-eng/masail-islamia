@@ -4,25 +4,18 @@
    ============================================================ */
 
 @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu:wght@400;500;600;700&family=Amiri:wght@400;700&family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&display=swap');
-
 @import url('https://fonts.googleapis.com/css2?family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Noto+Nastaliq+Urdu:wght@400;500;600;700&display=swap');
 
-
 /* ── Jameel Noori Nastaleeq (LOCAL FONT FILE) ── */
-
 @font-face {
   font-family: 'Jameel Noori Nastaleeq';
   src: url('/fonts/Jameel-Noori-Nastaleeq.ttf') format('truetype');
   font-weight: normal;
   font-style: normal;
-  font-display: swap;
+  font-display: block; /* block prevents flash — waits for font before rendering */
 }
 
-
 :root {
-
-  /* Warm ivory / gold / brown palette */
-
   --iv0: #fffdf8;
   --iv1: #faf6ef;
   --iv2: #f3ece0;
@@ -42,7 +35,6 @@
   --teal:    #1a5c50;
   --teal-m:  #267a6a;
   --teal-l:  #3da08d;
-
   --teal-bg: #eaf5f2;
 
   --red:     #c0392b;
@@ -63,37 +55,23 @@
   --bdr:     #e0cfb8;
   --bdr-m:   #c8b498;
 
-  /* Shadows */
-
   --sh-sm: 0 2px 10px rgba(74,46,10,.08);
   --sh-md: 0 5px 22px rgba(74,46,10,.12);
   --sh-lg: 0 12px 48px rgba(74,46,10,.18);
 
-  /* Fonts */
-
   --fu: 'Jameel Noori Nastaleeq','Noto Nastaliq Urdu','Amiri',serif;
-
   --fe: 'Playfair Display',Georgia,serif;
-
   --fui: 'Segoe UI',system-ui,sans-serif;
 
   --r: 12px;
   --r-lg: 18px;
 }
 
-
 /* RESET */
-
 *,*::before,*::after {
-  margin:0;
-  padding:0;
-  box-sizing:border-box;
+  margin:0; padding:0; box-sizing:border-box;
 }
-
-html {
-  scroll-behavior:smooth;
-}
-
+html { scroll-behavior:smooth; }
 body {
   font-family: var(--fu);
   background: var(--iv1);
@@ -432,30 +410,7 @@ header {
   cursor: pointer; transition: all .2s; margin-top: 4px;
 }
 .btn-sub:hover { background: var(--gold); color: #fff; }
-
-/* =============================================
-   SEARCH
-   ============================================= */
-#sec-search { background: var(--iv0); }
-.search-in { padding: 24px 20px; }
-.search-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr auto;
-  gap: 12px; align-items: end;
-}
-@media(max-width:700px)  { .search-grid { grid-template-columns: 1fr 1fr; } }
-@media(max-width:400px)  { .search-grid { grid-template-columns: 1fr; } }
-.btn-srch {
-  display: flex; align-items:center; gap:7px;
-  padding: 10px 18px;
-  background: linear-gradient(135deg, var(--brown), var(--teal));
-  color: var(--gold-bg); border: 1.5px solid var(--gold);
-  border-radius: 8px; font-family: var(--fu);
-  font-size: .86rem; cursor: pointer; white-space: nowrap;
-  transition: all .2s;
-}
-.btn-srch:hover { background: var(--gold); color:#fff; }
-@media(max-width:700px) { .btn-srch { grid-column: 1/-1; justify-content:center; } }
+.btn-sub:disabled { opacity: 0.7; cursor: not-allowed; }
 
 /* =============================================
    CATEGORIES
@@ -528,9 +483,10 @@ header {
   color: var(--gold-bg); border:none;
   font-family:var(--fui); font-size:.74rem; font-weight:600;
   letter-spacing:.07em; cursor:pointer; text-decoration:none;
-  transition: background .2s;
+  transition: background .2s; width: 100%;
 }
 .btn-dl:hover { background: var(--gold); color:#fff; }
+.btn-dl:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* =============================================
    CONTACT
@@ -658,6 +614,7 @@ footer {
   direction: rtl;
   text-align: right;
 }
+
 /* =============================================
    TOAST
    ============================================= */

@@ -135,7 +135,6 @@ function bindCategoryClicks() {
     box.addEventListener('click', () => {
       const category = box.dataset.category;
       if (!category) return;
-
       window.location.href = `category.html?category=${encodeURIComponent(category)}`;
     });
   });
@@ -203,12 +202,10 @@ function renderCategoryMasail(list) {
         </div>
         <div class="card-hd-ico">📘</div>
       </div>
-
       <div class="masail-body">
         <div class="masail-tag">#${escapeHtml(item.masailNumber || '')}</div>
         <h3 class="masail-ti">${escapeHtml(item.titleUrdu || '')}</h3>
         <p class="masail-ex">${escapeHtml(shortText(item.questionUrdu || '', 220))}</p>
-
         <button class="btn-rm" type="button" onclick='openCategoryDetail(${safeItem})'>
           <span>Read More</span>
         </button>
@@ -306,28 +303,23 @@ function renderBooks(list) {
   if (empty) empty.style.display = 'none';
 
   list.forEach(book => {
-    const fileUrl = book.fileUrl
-      ? (book.fileUrl.startsWith('http')
-          ? book.fileUrl
-          : `https://masail-islamia.onrender.com${book.fileUrl}`)
-      : '#';
+    const bookId = book._id || '';
+    const bookTitle = escapeHtml(book.titleEnglish || book.titleUrdu || 'book');
 
     const item = document.createElement('div');
     item.className = 'bk';
 
     item.innerHTML = `
       <div class="bk-cov"><span>📕</span></div>
-
       <div class="bk-info">
         <div class="bk-ur">${escapeHtml(book.titleUrdu || '')}</div>
         <div class="bk-en">${escapeHtml(book.titleEnglish || '')}</div>
         <div class="bk-desc">مصنف: ${escapeHtml(book.authorUrdu || '')}</div>
         <div class="bk-desc">Category: ${escapeHtml(book.category || '')}</div>
       </div>
-
-      <a class="btn-dl" href="${fileUrl}" target="_blank" rel="noopener noreferrer">
-        <span>Download PDF</span>
-      </a>
+      <button class="btn-dl" type="button" id="dl-btn-${bookId}" onclick="downloadBook('${bookId}', '${bookTitle}')">
+        ⬇ Download PDF
+      </button>
     `;
 
     wrap.appendChild(item);
@@ -335,10 +327,79 @@ function renderBooks(list) {
 }
 
 /* ─────────────────────────────────────────────
-   ASK FATWA SUBMIT
+   DOWNLOAD BOOK — forces download, never opens
+   ───────────────────────────────────────────── */
+async function downloadBook(bookId, bookTitle) {
+  if (!bookId) {
+    showToast('Book not found');
+    return;
+  }
+
+  const btn = document.getElementById(`dl-btn-${bookId}`);
+
+  // Show loading state on button
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ Downloading...';
+  }
+
+  try {
+    // Call the download route to increment count and get the URL
+    const res = await fetch(`${API}/books/download/${bookId}`);
+    const json = await res.json();
+
+    if (!json.success || !json.url) {
+      showToast('Download failed — please try again');
+      return;
+    }
+
+    // Build full URL if relative
+    const fileUrl = json.url.startsWith('http')
+      ? json.url
+      : `https://masail-islamia.onrender.com${json.url}`;
+
+    // Fetch the file as a blob to force download (not open in browser)
+    const fileRes = await fetch(fileUrl);
+
+    if (!fileRes.ok) {
+      showToast('File not found on server');
+      return;
+    }
+
+    const blob = await fileRes.blob();
+    const blobUrl = URL.createObjectURL(blob);
+
+    // Create invisible link and click it to trigger download
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = `${bookTitle}.pdf`;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+
+    // Clean up blob URL after short delay
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 3000);
+
+    showToast('ڈاؤن لوڈ شروع ہو گئی ✓');
+
+  } catch (err) {
+    console.error('downloadBook error:', err);
+    showToast('Download failed — please try again');
+  } finally {
+    // Restore button
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = '⬇ Download PDF';
+    }
+  }
+}
+
+/* ─────────────────────────────────────────────
+   ASK FATWA SUBMIT — fixed spinner & success msg
    ───────────────────────────────────────────── */
 async function submitQ() {
-  const name = getVal('ask-name');
+  const name  = getVal('ask-name');
   const email = getVal('ask-email');
   const phone = getVal('ask-phone');
   const topic = getVal('ask-topic');
@@ -352,6 +413,7 @@ async function submitQ() {
   const btn = document.getElementById('sub-btn');
   if (!btn) return;
 
+  // Disable button and show spinner
   btn.disabled = true;
   btn.innerHTML = '<span class="spin"></span> ارسال ہو رہا ہے...';
 
@@ -359,38 +421,59 @@ async function submitQ() {
     const res = await fetch(`${API}/questions`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        name,
-        email,
-        phone,
-        topic,
-        questionText: qtext
-      })
+      body: JSON.stringify({ name, email, phone, topic, questionText: qtext })
     });
 
     const json = await res.json();
 
     if (json.success) {
+      // ✅ Show success state on button immediately
+      btn.innerHTML = '✓ سوال کامیابی سے بھیج دیا گیا';
+      btn.style.background = 'linear-gradient(135deg, #1a7a3a, #267a6a)';
+
+      // Show toast message
       showToast('آپ کا سوال کامیابی سے بھیج دیا گیا ✓');
 
-      const n = document.getElementById('ask-name');
-      const e = document.getElementById('ask-email');
-      const p = document.getElementById('ask-phone');
-      const q = document.getElementById('ask-q');
-      const t = document.getElementById('ask-topic');
+      // Clear all form fields
+      ['ask-name', 'ask-email', 'ask-phone', 'ask-q'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      const topic = document.getElementById('ask-topic');
+      if (topic) topic.selectedIndex = 0;
 
-      if (n) n.value = '';
-      if (e) e.value = '';
-      if (p) p.value = '';
-      if (q) q.value = '';
-      if (t) t.selectedIndex = 0;
+      // Reset button after 3 seconds
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.style.background = '';
+        btn.innerHTML = `
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+          <span>سوال بھیجیں · SUBMIT</span>
+        `;
+      }, 3000);
+
     } else {
       showToast(json.message || 'Server error, please try again later');
+
+      // Re-enable button on error
+      btn.disabled = false;
+      btn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+        <span>سوال بھیجیں · SUBMIT</span>
+      `;
     }
+
   } catch (err) {
     console.error('submitQ error:', err);
     showToast('Server error, please try again later');
-  } finally {
+
+    // Re-enable button on error
     btn.disabled = false;
     btn.innerHTML = `
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
