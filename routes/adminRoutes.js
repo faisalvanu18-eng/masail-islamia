@@ -534,16 +534,17 @@ router.post('/books', protect, upload.single('bookFile'), async (req, res) => {
       .replace(/^-|-$/g, '');
 
     const uploadResult = await cloudinary.uploader.upload(
-      `data:application/pdf;base64,${req.file.buffer.toString('base64')}`,
-      {
-        resource_type: 'raw',
-        folder: 'masail-islamia/books',
-        public_id: `${Date.now()}-${safeName}`,
-        use_filename: false,
-        unique_filename: false,
-        overwrite: false
-      }
-    );
+  `data:application/pdf;base64,${req.file.buffer.toString('base64')}`,
+  {
+    resource_type: 'image',
+    folder: 'masail-islamia/books',
+    public_id: `${Date.now()}-${safeName}`,
+    format: 'pdf',
+    use_filename: false,
+    unique_filename: false,
+    overwrite: false
+  }
+);
 
     const book = await Book.create({
       titleUrdu,
@@ -551,12 +552,12 @@ router.post('/books', protect, upload.single('bookFile'), async (req, res) => {
       authorUrdu,
       authorEnglish: authorEnglish || '',
       category,
-      fileName: req.file.originalname,
+      ffileName: `${safeName}.pdf`,
       fileUrl: uploadResult.secure_url,
       cloudinaryUrl: uploadResult.secure_url,
       cloudinaryPublicId: uploadResult.public_id,
       fileSize: req.file.size,
-      mimeType: req.file.mimetype,
+      mimeType: 'application/pdf',
       isPublished: String(isPublished) === 'false' ? false : true
     });
 
@@ -606,7 +607,7 @@ router.delete('/books/:id', protect, async (req, res) => {
     if (book.cloudinaryPublicId) {
       try {
         await cloudinary.uploader.destroy(book.cloudinaryPublicId, {
-          resource_type: 'raw'
+          resource_type: 'image'
         });
       } catch (cloudErr) {
         console.log('Cloudinary delete failed (non-critical):', cloudErr.message);
