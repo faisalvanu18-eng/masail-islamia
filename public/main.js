@@ -394,9 +394,6 @@ function renderBooks(list) {
 }
 
 /* ─────────────────────────────────────────────
-   DOWNLOAD BOOK — open actual PDF from JSON url
-   ───────────────────────────────────────────── */
-/* ─────────────────────────────────────────────
    DOWNLOAD BOOK — force download from Cloudinary URL
    ───────────────────────────────────────────── */
 async function downloadBook(bookId) {
@@ -423,20 +420,8 @@ async function downloadBook(bookId) {
 
     const fileUrl = json.url.startsWith('http') ? json.url : `${SITE}${json.url}`;
 
-    // Fetch the PDF as a blob and force download
-    const pdfRes = await fetch(fileUrl);
-    const blob = await pdfRes.blob();
-    const blobUrl = URL.createObjectURL(blob);
-
-    const a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = 'book.pdf';
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+        // Just open the Cloudinary URL directly in a new tab
+    window.open(fileUrl, '_blank');
 
     showToast('کتاب ڈاؤن لوڈ ہو رہی ہے ✓');
   } catch (error) {
