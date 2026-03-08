@@ -11,18 +11,12 @@ const Question = require('../models/Question');
 const Book = require('../models/book');
 const { protect } = require('../middleware/auth');
 
-/* ─────────────────────────────────────────────
-   CLOUDINARY
-   ───────────────────────────────────────────── */
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-/* ─────────────────────────────────────────────
-   MULTER (PDF ONLY)
-   ───────────────────────────────────────────── */
 const upload = multer({
   storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
@@ -37,9 +31,6 @@ const upload = multer({
   }
 });
 
-/* ─────────────────────────────────────────────
-   EMAIL TRANSPORTER
-   ───────────────────────────────────────────── */
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_HOST,
   port: parseInt(process.env.EMAIL_PORT, 10) || 587,
@@ -50,53 +41,13 @@ const transporter = nodemailer.createTransport({
   }
 });
 
-/* ─────────────────────────────────────────────
-   HELPERS
-   ───────────────────────────────────────────── */
 function generateToken(adminId) {
   return jwt.sign({ id: adminId }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE || '30d'
   });
 }
 
-async function uploadPdfToCloudinary(file) {
-  const safeName = file.originalname
-    .replace(/\.[^/.]+$/, '')
-    .replace(/[^\w\-]+/g, '-')
-    .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
-
-  const publicId = `masail-islamia/books/${Date.now()}-${safeName}`;
-
-  const result = await new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      {
-        resource_type: 'raw',
-        type: 'upload',
-        public_id: publicId,
-        format: 'pdf',
-        use_filename: true,
-        unique_filename: false,
-        overwrite: false
-      },
-      (error, uploadResult) => {
-        if (error) return reject(error);
-        resolve(uploadResult);
-      }
-    );
-
-    stream.end(file.buffer);
-  });
-
-  return result;
-}
-
-function getCloudinaryRawDownloadUrl(secureUrl) {
-  return secureUrl;
-}
-/* ══════════════════════════════════════════════
-   AUTH
-   ══════════════════════════════════════════════ */
+/* AUTH */
 
 // POST /api/admin/login
 router.post('/login', async (req, res) => {
@@ -158,9 +109,8 @@ router.get('/me', protect, async (req, res) => {
   });
 });
 
-/* ══════════════════════════════════════════════
-   DASHBOARD STATS
-   ══════════════════════════════════════════════ */
+/* DASHBOARD STATS */
+
 router.get('/stats', protect, async (req, res) => {
   try {
     const [
@@ -210,9 +160,8 @@ router.get('/stats', protect, async (req, res) => {
   }
 });
 
-/* ══════════════════════════════════════════════
-   MASAIL MANAGEMENT
-   ══════════════════════════════════════════════ */
+/* MASAIL MANAGEMENT */
+
 router.get('/masail', protect, async (req, res) => {
   try {
     const { page = 1, limit = 20, status, category, search } = req.query;
@@ -257,9 +206,11 @@ router.get('/masail', protect, async (req, res) => {
 router.get('/masail/:id', protect, async (req, res) => {
   try {
     const masail = await Masail.findById(req.params.id);
+
     if (!masail) {
       return res.status(404).json({ success: false, message: 'Masail not found' });
     }
+
     res.json({ success: true, data: masail });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -269,6 +220,7 @@ router.get('/masail/:id', protect, async (req, res) => {
 router.post('/masail', protect, async (req, res) => {
   try {
     const masail = await Masail.create(req.body);
+
     res.status(201).json({
       success: true,
       message: 'Masail created successfully',
@@ -303,6 +255,7 @@ router.put('/masail/:id', protect, async (req, res) => {
 router.delete('/masail/:id', protect, async (req, res) => {
   try {
     const masail = await Masail.findById(req.params.id);
+
     if (!masail) {
       return res.status(404).json({ success: false, message: 'Masail not found' });
     }
@@ -342,9 +295,8 @@ router.put('/masail/:id/feature', protect, async (req, res) => {
   }
 });
 
-/* ══════════════════════════════════════════════
-   QUESTION MANAGEMENT
-   ══════════════════════════════════════════════ */
+/* QUESTION MANAGEMENT */
+
 router.get('/questions', protect, async (req, res) => {
   try {
     const { page = 1, limit = 20, status, search } = req.query;
@@ -387,9 +339,11 @@ router.get('/questions', protect, async (req, res) => {
 router.get('/questions/:id', protect, async (req, res) => {
   try {
     const question = await Question.findById(req.params.id).populate('masailPostId');
+
     if (!question) {
       return res.status(404).json({ success: false, message: 'Question not found' });
     }
+
     res.json({ success: true, data: question });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -405,6 +359,7 @@ router.put('/questions/:id/reply', protect, async (req, res) => {
     }
 
     const question = await Question.findById(req.params.id);
+
     if (!question) {
       return res.status(404).json({ success: false, message: 'Question not found' });
     }
@@ -513,6 +468,7 @@ router.put('/questions/:id/notes', protect, async (req, res) => {
 router.delete('/questions/:id', protect, async (req, res) => {
   try {
     const question = await Question.findById(req.params.id);
+
     if (!question) {
       return res.status(404).json({ success: false, message: 'Question not found' });
     }
@@ -528,9 +484,8 @@ router.delete('/questions/:id', protect, async (req, res) => {
   }
 });
 
-/* ══════════════════════════════════════════════
-   BOOK MANAGEMENT
-   ══════════════════════════════════════════════ */
+/* BOOK MANAGEMENT */
+
 router.get('/books', protect, async (req, res) => {
   try {
     const books = await Book.find().sort({ createdAt: -1 });
@@ -543,9 +498,11 @@ router.get('/books', protect, async (req, res) => {
 router.get('/books/:id', protect, async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
+
     if (!book) {
       return res.status(404).json({ success: false, message: 'Book not found' });
     }
+
     res.json({ success: true, data: book });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -570,23 +527,38 @@ router.post('/books', protect, upload.single('bookFile'), async (req, res) => {
       });
     }
 
-    const uploadResult = await uploadPdfToCloudinary(req.file);
-const finalUrl = uploadResult.secure_url;
+    const safeName = req.file.originalname
+      .replace(/\.[^/.]+$/, '')
+      .replace(/[^\w\-]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-|-$/g, '');
 
-const book = await Book.create({
-  titleUrdu,
-  titleEnglish,
-  authorUrdu,
-  authorEnglish: authorEnglish || '',
-  category,
-  fileName: req.file.originalname,
-  fileUrl: finalUrl,
-  cloudinaryUrl: uploadResult.secure_url,
-  cloudinaryPublicId: uploadResult.public_id,
-  fileSize: req.file.size,
-  mimeType: req.file.mimetype,
-  isPublished: String(isPublished) === 'false' ? false : true
-});
+    const uploadResult = await cloudinary.uploader.upload(
+      `data:application/pdf;base64,${req.file.buffer.toString('base64')}`,
+      {
+        resource_type: 'raw',
+        folder: 'masail-islamia/books',
+        public_id: `${Date.now()}-${safeName}`,
+        use_filename: false,
+        unique_filename: false,
+        overwrite: false
+      }
+    );
+
+    const book = await Book.create({
+      titleUrdu,
+      titleEnglish,
+      authorUrdu,
+      authorEnglish: authorEnglish || '',
+      category,
+      fileName: req.file.originalname,
+      fileUrl: uploadResult.secure_url,
+      cloudinaryUrl: uploadResult.secure_url,
+      cloudinaryPublicId: uploadResult.public_id,
+      fileSize: req.file.size,
+      mimeType: req.file.mimetype,
+      isPublished: String(isPublished) === 'false' ? false : true
+    });
 
     res.status(201).json({
       success: true,
@@ -595,7 +567,10 @@ const book = await Book.create({
     });
   } catch (error) {
     console.error('Book upload error:', error);
-    res.status(400).json({ success: false, message: error.message });
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
   }
 });
 
@@ -649,9 +624,8 @@ router.delete('/books/:id', protect, async (req, res) => {
   }
 });
 
-/* ══════════════════════════════════════════════
-   ADMIN PASSWORD CHANGE
-   ══════════════════════════════════════════════ */
+/* ADMIN PASSWORD CHANGE */
+
 router.put('/change-password', protect, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
