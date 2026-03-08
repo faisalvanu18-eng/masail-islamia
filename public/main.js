@@ -396,6 +396,9 @@ function renderBooks(list) {
 /* ─────────────────────────────────────────────
    DOWNLOAD BOOK — open actual PDF from JSON url
    ───────────────────────────────────────────── */
+/* ─────────────────────────────────────────────
+   DOWNLOAD BOOK — force download from Cloudinary URL
+   ───────────────────────────────────────────── */
 async function downloadBook(bookId) {
   if (!bookId) {
     showToast('Book not found');
@@ -420,18 +423,22 @@ async function downloadBook(bookId) {
 
     const fileUrl = json.url.startsWith('http') ? json.url : `${SITE}${json.url}`;
 
-    const a = document.createElement('a');
-    a.href = fileUrl;
-    a.target = '_blank';
-    a.rel = 'noopener';
-    a.download = '';
-    a.style.display = 'none';
+    // Fetch the PDF as a blob and force download
+    const pdfRes = await fetch(fileUrl);
+    const blob = await pdfRes.blob();
+    const blobUrl = URL.createObjectURL(blob);
 
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    a.download = 'book.pdf';
+    a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
     a.remove();
 
-    showToast('کتاب کھل رہی ہے / ڈاؤن لوڈ ہو رہی ہے ✓');
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+
+    showToast('کتاب ڈاؤن لوڈ ہو رہی ہے ✓');
   } catch (error) {
     console.error('downloadBook error:', error);
     showToast('کتاب ڈاؤن لوڈ نہیں ہو سکی');
@@ -444,7 +451,6 @@ async function downloadBook(bookId) {
     }, 1500);
   }
 }
-
 /* ─────────────────────────────────────────────
    ASK FATWA SUBMIT
    ───────────────────────────────────────────── */
