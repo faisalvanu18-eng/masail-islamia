@@ -62,70 +62,77 @@ const transporter = nodemailer.createTransport({
 // AUTH
 // ══════════════════════════════════════════════
 
-// POST /api/admin/login
-router.post('/login', async (req, res) => {
+router.post('/books', protect, upload.single('bookFile'), async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { titleUrdu, titleEnglish, authorUrdu, category, isPublished } = req.body;
 
-    if (!username || !password) {
+    if (!titleUrdu || !titleEnglish || !authorUrdu || !category) {
       return res.status(400).json({
         success: false,
-        message: 'Username and password are required'
+        message: 'titleUrdu, titleEnglish, authorUrdu and category are required'
       });
     }
 
-    const admin = await Admin.findOne({
-      username: username.toLowerCase()
-    }).select('+password');
-
-    if (!admin) {
-      return res.status(401).json({
+    if (!req.file) {
+      return res.status(400).json({
         success: false,
-        message: 'Invalid username or password'
+        message: 'PDF file is required'
       });
     }
 
-    const isMatch = await admin.matchPassword(password);
+    // Upload buffer directly to Cloudinary
+    const safeName = req.file.originalname
+      .replace(/\s+/g, '-')
+      .replace(/\.pdf$/i, '');
 
-    if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid username or password'
-      });
-    }
+    const publicId = `masail-islamia/books/${Date.now()}-${safeName}`;
 
-    if (!admin.isActive) {
-      return res.status(403).json({
-        success: false,
-        message: 'Admin account is disabled'
-      });
-    }
+    const uploadResult = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          resource_type: 'raw',
+          type: 'upload',
+          public_id: publicId,
+          format: 'pdf'
+        },
+        (error, result) => {
+          if (error) return reject(error);
+          resolve(result);
+        }
+      );
 
-    admin.lastLogin = new Date();
-    await admin.save();
+      stream.end(req.file.buffer);
+    });
 
-    const token = jwt.sign(
-      { id: admin._id },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRE || '7d' }
-    );
+    console.log('Cloudinary upload result:', uploadResult);
+    console.log('Cloudinary secure_url:', uploadResult.secure_url);
 
-    res.json({
+    const book = await Book.create({
+      titleUrdu,
+      titleEnglish,
+      authorUrdu,
+      category,
+      fileName: req.file.originalname,
+      fileUrl: uploadResult.secure_url,
+      fileSize: req.file.size,
+      mimeType: req.file.mimetype,
+      isPublished: String(isPublished) === 'false' ? false : true
+    });
+
+    res.status(201).json({
       success: true,
-      token,
-      admin: {
-        id: admin._id,
-        username: admin.username,
-        email: admin.email,
-        role: admin.role
-      }
+      message: 'Book uploaded successfully',
+      data: book
     });
 
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('Book upload error:', error);
+    res.status(400).json({
+      success: false,
+      message: error.message
+    });
   }
 });
-
 
 // GET /api/admin/me
 router.get('/me', protect, async (req, res) => {
@@ -420,20 +427,32 @@ router.post('/books', protect, upload.single('bookFile'), async (req, res) => {
       return res.status(400).json({ success: false, message: 'PDF file is required' });
     }
 
-    // Upload buffer directly to Cloudinary (prevents corruption)
-    const safeName = req.file.originalname.replace(/\s+/g, '-').replace(/\.pdf$/i, '');
-    const publicId = `masail-islamia/books/${Date.now()}-${safeName}.pdf`;
+    // Upload buffer directly to Cloudinary
+const safeName = req.file.originalname
+  .replace(/\s+/g, '-')
+  .replace(/\.pdf$/i, '');
 
-    const uploadResult = await new Promise((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        { resource_type: 'raw', public_id: publicId },
-        (error, result) => {
-          if (error) reject(error);
-          else resolve(result);
-        }
-      );
-      stream.end(req.file.buffer);
-    });
+const publicId = `masail-islamia/books/${Date.now()}-${safeName}`;
+
+const uploadResult = await new Promise((resolve, reject) => {
+  const stream = cloudinary.uploader.upload_stream(
+    {
+      resource_type: 'raw',
+      type: 'upload',
+      public_id: publicId,
+      format: 'pdf'
+    },
+    (error, result) => {
+      if (error) return reject(error);
+      resolve(result);
+    }
+  );
+
+  stream.end(req.file.buffer);
+});
+
+console.log('Cloudinary upload result:', uploadResult);
+console.log('Cloudinary secure_url:', uploadResult.secure_url);
 
     const book = await Book.create({
       titleUrdu,
