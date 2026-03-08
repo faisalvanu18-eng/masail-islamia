@@ -328,7 +328,6 @@ function renderBooks(list) {
 
 /* ─────────────────────────────────────────────
    READ BOOK — opens PDF in new tab directly
-   No download needed, no file storage issues
    ───────────────────────────────────────────── */
 function readBook(bookId, bookTitle) {
   if (!bookId) {
@@ -342,8 +341,6 @@ function readBook(bookId, bookTitle) {
     btn.textContent = '⏳ Opening...';
   }
 
-  // Open PDF directly in new tab using the static file URL
-  // This works perfectly on Render — no file storage issues
   fetch(API + '/books/download/' + bookId)
     .then(res => res.json())
     .then(json => {
@@ -356,7 +353,6 @@ function readBook(bookId, bookTitle) {
         ? json.url
         : 'https://masail-islamia.onrender.com' + json.url;
 
-      // Open in new tab
       window.open(fileUrl, '_blank');
       showToast('کتاب کھل رہی ہے ✓');
     })
@@ -367,4 +363,136 @@ function readBook(bookId, bookTitle) {
         btn.textContent = '📖 Read Book';
       }
     });
+}
+
+/* ─────────────────────────────────────────────
+   ASK FATWA SUBMIT
+   ───────────────────────────────────────────── */
+async function submitQ() {
+  const name  = getVal('ask-name');
+  const email = getVal('ask-email');
+  const phone = getVal('ask-phone');
+  const topic = getVal('ask-topic');
+  const qtext = getVal('ask-q');
+
+  if (!name || !email || !phone || !qtext) {
+    showToast('تمام ضروری خانے پُر کریں — Fill all fields');
+    return;
+  }
+
+  const btn = document.getElementById('sub-btn');
+  if (!btn) return;
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span> ارسال ہو رہا ہے...';
+
+  try {
+    const res = await fetch(`${API}/questions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, phone, topic, questionText: qtext })
+    });
+
+    const json = await res.json();
+
+    if (json.success) {
+      // Show success state on button
+      btn.innerHTML = '✓ سوال کامیابی سے بھیج دیا گیا';
+      btn.style.background = 'linear-gradient(135deg, #1a7a3a, #267a6a)';
+
+      showToast('آپ کا سوال کامیابی سے بھیج دیا گیا ✓');
+
+      // Clear all form fields
+      ['ask-name', 'ask-email', 'ask-phone', 'ask-q'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+      });
+      const t = document.getElementById('ask-topic');
+      if (t) t.selectedIndex = 0;
+
+      // Reset button after 3 seconds
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.style.background = '';
+        btn.innerHTML = `
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+          <span>سوال بھیجیں · SUBMIT</span>
+        `;
+      }, 3000);
+
+    } else {
+      showToast(json.message || 'Server error, please try again later');
+      btn.disabled = false;
+      btn.innerHTML = `
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="22" y1="2" x2="11" y2="13"></line>
+          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+        </svg>
+        <span>سوال بھیجیں · SUBMIT</span>
+      `;
+    }
+
+  } catch (err) {
+    console.error('submitQ error:', err);
+    showToast('Server error, please try again later');
+    btn.disabled = false;
+    btn.innerHTML = `
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="22" y1="2" x2="11" y2="13"></line>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+      </svg>
+      <span>سوال بھیجیں · SUBMIT</span>
+    `;
+  }
+}
+
+/* ─────────────────────────────────────────────
+   UTILS
+   ───────────────────────────────────────────── */
+function getVal(id) {
+  return document.getElementById(id)?.value?.trim() || '';
+}
+
+function setText(id, text) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = text;
+}
+
+function fmtDate(d) {
+  if (!d) return '';
+  return new Date(d).toLocaleDateString('en-GB', {
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  });
+}
+
+function shortText(text, len) {
+  if (!text) return '';
+  return text.length > len ? `${text.slice(0, len)}...` : text;
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, function (m) {
+    return ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    })[m];
+  });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  if (!t) return;
+
+  t.textContent = msg;
+  t.classList.add('show');
+
+  setTimeout(() => t.classList.remove('show'), 3400);
 }
