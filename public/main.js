@@ -60,9 +60,10 @@ async function loadFeatured() {
     const json = await res.json();
 
     if (!json.success || !json.data || !json.data.length) {
+      setText('masail-date', '');
       setText('masail-title', 'فی الحال کوئی مسئلہ موجود نہیں ہے');
       setText('masail-excerpt', 'No masail available right now');
-      setText('masail-date', '');
+      window._masail = null;
       return;
     }
 
@@ -70,7 +71,7 @@ async function loadFeatured() {
     window._masail = m;
 
     setText('masail-date', fmtDate(m.publishedDate));
-    setText('masail-title', m.titleUrdu);
+    setText('masail-title', m.titleUrdu || '');
 
     const excerpt = (m.questionUrdu || '').length > 190
       ? `${m.questionUrdu.slice(0, 190)}...`
@@ -191,6 +192,9 @@ function renderCategoryMasail(list) {
   list.forEach(item => {
     const card = document.createElement('div');
     card.className = 'card';
+
+    const safeItem = JSON.stringify(item).replace(/'/g, '&apos;');
+
     card.innerHTML = `
       <div class="card-hd">
         <div class="card-hd-text">
@@ -199,15 +203,18 @@ function renderCategoryMasail(list) {
         </div>
         <div class="card-hd-ico">📘</div>
       </div>
+
       <div class="masail-body">
         <div class="masail-tag">#${escapeHtml(item.masailNumber || '')}</div>
         <h3 class="masail-ti">${escapeHtml(item.titleUrdu || '')}</h3>
         <p class="masail-ex">${escapeHtml(shortText(item.questionUrdu || '', 220))}</p>
-        <button class="btn-rm" type="button" onclick='openCategoryDetail(${JSON.stringify(item).replace(/'/g, "&apos;")})'>
+
+        <button class="btn-rm" type="button" onclick='openCategoryDetail(${safeItem})'>
           <span>Read More</span>
         </button>
       </div>
     `;
+
     wrap.appendChild(card);
   });
 }
@@ -300,23 +307,29 @@ function renderBooks(list) {
 
   list.forEach(book => {
     const fileUrl = book.fileUrl
-      ? (book.fileUrl.startsWith('http') ? book.fileUrl : `https://masail-islamia.onrender.com${book.fileUrl}`)
+      ? (book.fileUrl.startsWith('http')
+          ? book.fileUrl
+          : `https://masail-islamia.onrender.com${book.fileUrl}`)
       : '#';
 
     const item = document.createElement('div');
     item.className = 'bk';
+
     item.innerHTML = `
       <div class="bk-cov"><span>📕</span></div>
+
       <div class="bk-info">
         <div class="bk-ur">${escapeHtml(book.titleUrdu || '')}</div>
         <div class="bk-en">${escapeHtml(book.titleEnglish || '')}</div>
         <div class="bk-desc">مصنف: ${escapeHtml(book.authorUrdu || '')}</div>
         <div class="bk-desc">Category: ${escapeHtml(book.category || '')}</div>
       </div>
+
       <a class="btn-dl" href="${fileUrl}" target="_blank" rel="noopener noreferrer">
         <span>Download PDF</span>
       </a>
     `;
+
     wrap.appendChild(item);
   });
 }
