@@ -17,12 +17,16 @@ window.addEventListener('DOMContentLoaded', () => {
 
       setTimeout(() => {
         intro.style.display = 'none';
+        handleInitialState();
       }, 1000);
     }, 3800);
+  } else {
+    handleInitialState();
   }
 
   bindCategoryClicks();
   bindBooksButton();
+  bindAskForm();
   loadFeatured();
 
   if (document.body.dataset.page === 'category') {
@@ -34,6 +38,16 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 });
 
+function handleInitialState() {
+  if (location.hash === '#detail') {
+    document.getElementById('pgMain')?.classList.add('hide');
+    document.getElementById('pgDetail')?.classList.add('show');
+  } else {
+    document.getElementById('pgDetail')?.classList.remove('show');
+    document.getElementById('pgMain')?.classList.remove('hide');
+  }
+}
+
 function hideIntro() {
   const intro = document.getElementById('intro');
   if (!intro) return;
@@ -44,6 +58,7 @@ function hideIntro() {
     intro.remove();
   }, 1000);
 }
+
 /* ─────────────────────────────────────────────
    NAV DRAWER
    ───────────────────────────────────────────── */
@@ -60,16 +75,33 @@ function closeNav() {
 /* ─────────────────────────────────────────────
    DETAIL PAGE
    ───────────────────────────────────────────── */
-function openDetail() {
+function showDetailPage() {
   document.getElementById('pgMain')?.classList.add('hide');
   document.getElementById('pgDetail')?.classList.add('show');
   window.scrollTo(0, 0);
 }
 
-function closeDetail() {
+function showMainPage() {
   document.getElementById('pgDetail')?.classList.remove('show');
   document.getElementById('pgMain')?.classList.remove('hide');
   window.scrollTo(0, 0);
+}
+
+function openDetail(pushHistory = true) {
+  showDetailPage();
+
+  if (pushHistory && location.hash !== '#detail') {
+    history.pushState({ page: 'detail' }, '', '#detail');
+  }
+}
+
+function closeDetail() {
+  if (location.hash === '#detail') {
+    history.back();
+    return;
+  }
+
+  showMainPage();
 }
 
 /* ─────────────────────────────────────────────
@@ -125,7 +157,7 @@ function openDetailFull() {
 
   setText('d-ref', m.reference || 'درمختار، رد المحتار، فتاوی عالمگیری');
 
-  openDetail();
+  openDetail(true);
 }
 
 /* ─────────────────────────────────────────────
@@ -156,7 +188,7 @@ function bindCategoryClicks() {
     box.addEventListener('click', () => {
       const category = box.dataset.category;
       if (!category) return;
-      window.location.href = `category.html?category=${encodeURIComponent(category)}`;
+      window.location.href = `/category.html?category=${encodeURIComponent(category)}`;
     });
   });
 }
@@ -262,7 +294,7 @@ function openCategoryDetail(item) {
 
   setText('d-ref', item.reference || 'درمختار، رد المحتار، فتاوی عالمگیری');
 
-  openDetail();
+  openDetail(true);
 }
 
 /* ─────────────────────────────────────────────
@@ -273,7 +305,7 @@ function bindBooksButton() {
   if (!btn) return;
 
   btn.addEventListener('click', () => {
-    window.location.href = 'books.html';
+    window.location.href = '/books.html';
   });
 }
 
@@ -385,6 +417,7 @@ async function downloadBook(bookId) {
     }, 1500);
   }
 }
+
 /* ─────────────────────────────────────────────
    ASK FATWA SUBMIT
    ───────────────────────────────────────────── */
@@ -414,7 +447,7 @@ function getSubmitButtonMarkup() {
 }
 
 async function submitQ() {
-  const name  = getVal('ask-name');
+  const name = getVal('ask-name');
   const email = getVal('ask-email');
   const phone = getVal('ask-phone');
   const topic = getVal('ask-topic');
@@ -471,6 +504,17 @@ async function submitQ() {
     btn.innerHTML = getSubmitButtonMarkup();
   }
 }
+
+/* ─────────────────────────────────────────────
+   BROWSER / PHONE BACK SUPPORT
+   ───────────────────────────────────────────── */
+window.addEventListener('popstate', () => {
+  if (location.hash === '#detail') {
+    showDetailPage();
+  } else {
+    showMainPage();
+  }
+});
 
 /* ─────────────────────────────────────────────
    UTILS
