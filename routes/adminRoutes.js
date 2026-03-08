@@ -92,10 +92,8 @@ async function uploadPdfToCloudinary(file) {
 }
 
 function getCloudinaryRawDownloadUrl(secureUrl) {
-  if (!secureUrl || !secureUrl.includes('/upload/')) return secureUrl;
-  return secureUrl.replace('/upload/', '/upload/fl_attachment/');
+  return secureUrl;
 }
-
 /* ══════════════════════════════════════════════
    AUTH
    ══════════════════════════════════════════════ */
@@ -573,22 +571,22 @@ router.post('/books', protect, upload.single('bookFile'), async (req, res) => {
     }
 
     const uploadResult = await uploadPdfToCloudinary(req.file);
-    const finalUrl = getCloudinaryRawDownloadUrl(uploadResult.secure_url);
+const finalUrl = uploadResult.secure_url;
 
-    const book = await Book.create({
-      titleUrdu,
-      titleEnglish,
-      authorUrdu,
-      authorEnglish: authorEnglish || '',
-      category,
-      fileName: req.file.originalname,
-      fileUrl: finalUrl,
-      cloudinaryUrl: uploadResult.secure_url,
-      cloudinaryPublicId: uploadResult.public_id,
-      fileSize: req.file.size,
-      mimeType: req.file.mimetype,
-      isPublished: String(isPublished) === 'false' ? false : true
-    });
+const book = await Book.create({
+  titleUrdu,
+  titleEnglish,
+  authorUrdu,
+  authorEnglish: authorEnglish || '',
+  category,
+  fileName: req.file.originalname,
+  fileUrl: finalUrl,
+  cloudinaryUrl: uploadResult.secure_url,
+  cloudinaryPublicId: uploadResult.public_id,
+  fileSize: req.file.size,
+  mimeType: req.file.mimetype,
+  isPublished: String(isPublished) === 'false' ? false : true
+});
 
     res.status(201).json({
       success: true,
