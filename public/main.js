@@ -327,72 +327,44 @@ function renderBooks(list) {
 }
 
 /* ─────────────────────────────────────────────
-   DOWNLOAD BOOK — forces download, never opens
+   DOWNLOAD BOOK — server streams file directly
+   with Content-Disposition: attachment so the
+   browser always downloads, never opens
    ───────────────────────────────────────────── */
-async function downloadBook(bookId, bookTitle) {
+function downloadBook(bookId, bookTitle) {
   if (!bookId) {
     showToast('Book not found');
     return;
   }
 
   const btn = document.getElementById(`dl-btn-${bookId}`);
-
-  // Show loading state on button
   if (btn) {
     btn.disabled = true;
     btn.textContent = '⏳ Downloading...';
   }
 
-  try {
-    // Call the download route to increment count and get the URL
-    const res = await fetch(`${API}/books/download/${bookId}`);
-    const json = await res.json();
+  // Create a hidden <a> pointing directly to the download route.
+  // The server will respond with Content-Disposition: attachment
+  // so the browser saves the file instead of opening it.
+  const downloadUrl = `${API}/books/download/${bookId}`;
 
-    if (!json.success || !json.url) {
-      showToast('Download failed — please try again');
-      return;
-    }
+  const a = document.createElement('a');
+  a.href = downloadUrl;
+  a.download = `${bookTitle}.pdf`;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 
-    // Build full URL if relative
-    const fileUrl = json.url.startsWith('http')
-      ? json.url
-      : `https://masail-islamia.onrender.com${json.url}`;
+  showToast('ڈاؤن لوڈ شروع ہو گئی ✓');
 
-    // Fetch the file as a blob to force download (not open in browser)
-    const fileRes = await fetch(fileUrl);
-
-    if (!fileRes.ok) {
-      showToast('File not found on server');
-      return;
-    }
-
-    const blob = await fileRes.blob();
-    const blobUrl = URL.createObjectURL(blob);
-
-    // Create invisible link and click it to trigger download
-    const a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = `${bookTitle}.pdf`;
-    a.style.display = 'none';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
-    // Clean up blob URL after short delay
-    setTimeout(() => URL.revokeObjectURL(blobUrl), 3000);
-
-    showToast('ڈاؤن لوڈ شروع ہو گئی ✓');
-
-  } catch (err) {
-    console.error('downloadBook error:', err);
-    showToast('Download failed — please try again');
-  } finally {
-    // Restore button
+  // Restore button after short delay
+  setTimeout(() => {
     if (btn) {
       btn.disabled = false;
       btn.textContent = '⬇ Download PDF';
     }
-  }
+  }, 3000);
 }
 
 /* ─────────────────────────────────────────────
