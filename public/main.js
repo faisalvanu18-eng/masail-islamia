@@ -394,7 +394,7 @@ function renderBooks(list) {
 }
 
 /* ─────────────────────────────────────────────
-   DOWNLOAD BOOK — force PDF download
+   DOWNLOAD BOOK — open actual PDF from JSON url
    ───────────────────────────────────────────── */
 async function downloadBook(bookId) {
   if (!bookId) {
@@ -411,14 +411,27 @@ async function downloadBook(bookId) {
       btn.innerHTML = '⏳ Downloading...';
     }
 
+    const res = await fetch(`${API}/books/download/${bookId}`);
+    const json = await res.json();
+
+    if (!json.success || !json.url) {
+      throw new Error('Book file not found');
+    }
+
+    const fileUrl = json.url.startsWith('http') ? json.url : `${SITE}${json.url}`;
+
     const a = document.createElement('a');
-    a.href = `${API}/books/download/${bookId}`;
+    a.href = fileUrl;
+    a.target = '_blank';
+    a.rel = 'noopener';
+    a.download = '';
     a.style.display = 'none';
+
     document.body.appendChild(a);
     a.click();
     a.remove();
 
-    showToast('کتاب ڈاؤن لوڈ ہو رہی ہے ✓');
+    showToast('کتاب کھل رہی ہے / ڈاؤن لوڈ ہو رہی ہے ✓');
   } catch (error) {
     console.error('downloadBook error:', error);
     showToast('کتاب ڈاؤن لوڈ نہیں ہو سکی');

@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const router = express.Router();
 const Book = require('../models/book');
 
@@ -50,7 +51,7 @@ router.get('/', async (req, res) => {
 /* ─────────────────────────────────────────────
    DOWNLOAD book file directly
    /api/books/download/:id
-   Forces download instead of opening in browser
+   Forces download instead of opening JSON
    ───────────────────────────────────────────── */
 router.get('/download/:id', async (req, res) => {
   try {
@@ -74,17 +75,36 @@ router.get('/download/:id', async (req, res) => {
     await book.save();
 
     const cleanFileName =
-      (book.titleEnglish || book.titleUrdu || 'book')
+      ((book.titleEnglish || book.titleUrdu || 'book')
         .replace(/[<>:"/\\|?*]+/g, '')
-        .trim() + '.pdf';
+        .trim() || 'book') + '.pdf';
 
-    // If stored fileUrl is like /upload/books/file.pdf
-    if (book.fileUrl.startsWith('/upload/')) {
-      const filePath = path.join(__dirname, '..', book.fileUrl.replace(/^\//, ''));
+    const fileUrl = String(book.fileUrl).trim();
+
+    /* External file URL */
+    if (/^https?:\/\//i.test(fileUrl)) {
+      return res.json({
+        success: true,
+        url: fileUrl
+      });
+    }
+
+    /* Local uploaded file path */
+    if (fileUrl.startsWith('/uploads/') || fileUrl.startsWith('/upload/')) {
+      const relativePath = fileUrl.replace(/^\/+/, '');
+      const filePath = path.join(__dirname, '..', relativePath);
+
+      if (!fs.existsSync(filePath)) {
+        return res.status(404).json({
+          success: false,
+          message: 'Book file does not exist on server'
+        });
+      }
 
       return res.download(filePath, cleanFileName, (err) => {
         if (err) {
           console.error('Download error:', err.message);
+
           if (!res.headersSent) {
             return res.status(500).json({
               success: false,
@@ -95,10 +115,10 @@ router.get('/download/:id', async (req, res) => {
       });
     }
 
-    // If full external URL is saved instead
-    return res.json({
-      success: true,
-      url: book.fileUrl
+    /* Fallback */
+    return res.status(400).json({
+      success: false,
+      message: 'Invalid book file path'
     });
 
   } catch (error) {
