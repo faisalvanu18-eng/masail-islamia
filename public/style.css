@@ -654,3 +654,59 @@ footer {
   animation:rot .7s linear infinite;
 }
 @keyframes rot{to{transform:rotate(360deg)}}
+/* =============================================
+   SEARCH SECTION
+   ============================================= */
+
+.search-in{
+  padding:20px;
+  background:var(--iv0);
+}
+
+.search-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr auto;
+  gap:14px;
+  align-items:end;
+}
+
+@media(max-width:720px){
+  .search-grid{
+    grid-template-columns:1fr;
+  }
+}
+
+.btn-srch{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+
+  padding:10px 20px;
+
+  background:linear-gradient(135deg,var(--brown),var(--teal));
+  color:var(--gold-bg);
+
+  border:1.5px solid var(--gold);
+  border-radius:8px;
+
+  font-family:var(--fui);
+  font-size:.78rem;
+  font-weight:600;
+  letter-spacing:.07em;
+
+  cursor:pointer;
+  transition:all .2s;
+
+  direction:ltr;
+}
+
+.btn-srch:hover{
+  background:var(--gold);
+  color:#fff;
+}
+
+.btn-srch svg{
+  width:14px;
+  height:14px;
+}
