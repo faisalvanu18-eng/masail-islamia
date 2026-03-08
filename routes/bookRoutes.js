@@ -76,20 +76,26 @@ router.get('/download/:id', async (req, res) => {
     book.downloadCount += 1;
     await book.save();
 
-    // Build absolute file path from the stored relative URL
-    // fileUrl is typically like '/uploads/books/filename.pdf'
-    const relativePath = book.fileUrl.startsWith('/')
-      ? book.fileUrl
-      : `/${book.fileUrl}`;
+    // Your upload folder is called 'upload' (not 'uploads')
+    // fileUrl stored in DB is like '/uploads/books/filename.pdf'
+    // but the actual folder on disk is /upload/books/filename.pdf
+    const fileName = path.basename(book.fileUrl);
 
-    // Try root-level /uploads first, then /public/uploads as fallback
-    let absolutePath = path.join(__dirname, '..', relativePath);
+    // Try 1: /upload/books/filename.pdf  (your actual folder)
+    let absolutePath = path.join(__dirname, '..', 'upload', 'books', fileName);
 
+    // Try 2: /upload/filename.pdf
     if (!fs.existsSync(absolutePath)) {
-      absolutePath = path.join(__dirname, '..', 'public', relativePath);
+      absolutePath = path.join(__dirname, '..', 'upload', fileName);
     }
 
-    // Check file exists
+    // Try 3: use fileUrl path as-is from project root
+    if (!fs.existsSync(absolutePath)) {
+      const rel = book.fileUrl.startsWith('/') ? book.fileUrl : '/' + book.fileUrl;
+      absolutePath = path.join(__dirname, '..', rel);
+    }
+
+    // If still not found, return error
     if (!fs.existsSync(absolutePath)) {
       return res.status(404).json({
         success: false,
@@ -97,15 +103,12 @@ router.get('/download/:id', async (req, res) => {
       });
     }
 
-    // Get a clean filename for the download dialog
-    const fileName = path.basename(absolutePath);
-
     // Set headers to FORCE download (not open in browser)
     res.setHeader('Content-Type', 'application/octet-stream');
-    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Disposition', 'attachment; filename="' + fileName + '"');
     res.setHeader('Access-Control-Allow-Origin', '*');
 
-    // Stream the file to the client
+    // Stream the file directly to the client
     const fileStream = fs.createReadStream(absolutePath);
     fileStream.pipe(res);
 
