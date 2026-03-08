@@ -547,19 +547,19 @@ router.post('/books', protect, upload.single('bookFile'), async (req, res) => {
 );
 
     const book = await Book.create({
-      titleUrdu,
-      titleEnglish,
-      authorUrdu,
-      authorEnglish: authorEnglish || '',
-      category,
-      ffileName: `${safeName}.pdf`,
-      fileUrl: uploadResult.secure_url,
-      cloudinaryUrl: uploadResult.secure_url,
-      cloudinaryPublicId: uploadResult.public_id,
-      fileSize: req.file.size,
-      mimeType: 'application/pdf',
-      isPublished: String(isPublished) === 'false' ? false : true
-    });
+  titleUrdu,
+  titleEnglish,
+  authorUrdu,
+  authorEnglish: authorEnglish || '',
+  category,
+  fileName: req.file.originalname,
+  fileUrl: uploadResult.secure_url,
+  cloudinaryUrl: uploadResult.secure_url,
+  cloudinaryPublicId: uploadResult.public_id,
+  fileSize: req.file.size,
+  mimeType: 'application/pdf',
+  isPublished: String(isPublished) === 'false' ? false : true
+});
 
     res.status(201).json({
       success: true,
