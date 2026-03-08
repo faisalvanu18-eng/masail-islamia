@@ -13,45 +13,31 @@ const Book = require('../models/book');
 const nodemailer = require('nodemailer');
 const { protect } = require('../middleware/auth');
 
-
 // ─────────────────────────────────────────────
-// Ensure upload folders exist
+// Cloudinary Setup
 // ─────────────────────────────────────────────
-const booksUploadDir = path.join(__dirname, '../uploads/books');
+const cloudinary = require('cloudinary').v2;
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 
-if (!fs.existsSync(path.join(__dirname, '../uploads'))) {
-  fs.mkdirSync(path.join(__dirname, '../uploads'), { recursive: true });
-}
-
-if (!fs.existsSync(booksUploadDir)) {
-  fs.mkdirSync(booksUploadDir, { recursive: true });
-}
-
-
-// ─────────────────────────────────────────────
-// Email transporter
-// ─────────────────────────────────────────────
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST,
-  port: parseInt(process.env.EMAIL_PORT) || 587,
-  secure: false,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key:    process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-
 // ─────────────────────────────────────────────
-// Multer storage for PDF books
+// Multer → Cloudinary storage for PDF books
 // ─────────────────────────────────────────────
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, booksUploadDir);
-  },
-  filename: (req, file, cb) => {
-    const safeName = file.originalname.replace(/\s+/g, '-');
-    cb(null, `${Date.now()}-${safeName}`);
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: 'masail-islamia/books',   // folder name in your Cloudinary account
+    resource_type: 'raw',             // required for PDFs (not images)
+    format: 'pdf',
+    public_id: (req, file) => {
+      const safeName = file.originalname.replace(/\s+/g, '-').replace('.pdf', '');
+      return `${Date.now()}-${safeName}`;
+    }
   }
 });
 
@@ -65,7 +51,21 @@ const upload = multer({
     }
   },
   limits: {
-    fileSize: 50 * 1024 * 1024
+    fileSize: 50 * 1024 * 1024  // 50 MB max
+  }
+});
+
+
+// ─────────────────────────────────────────────
+// Email transporter
+// ─────────────────────────────────────────────
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_HOST,
+  port: parseInt(process.env.EMAIL_PORT) || 587,
+  secure: false,
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS
   }
 });
 
@@ -134,20 +134,14 @@ router.post('/login', async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
 
 // GET /api/admin/me
 router.get('/me', protect, async (req, res) => {
-  res.json({
-    success: true,
-    admin: req.admin
-  });
+  res.json({ success: true, admin: req.admin });
 });
 
 
@@ -155,16 +149,11 @@ router.get('/me', protect, async (req, res) => {
 // DASHBOARD STATS
 // ══════════════════════════════════════════════
 
-// GET /api/admin/stats
 router.get('/stats', protect, async (req, res) => {
   try {
     const [
-      totalMasail,
-      publishedMasail,
-      unpublishedMasail,
-      totalQuestions,
-      pendingQuestions,
-      answeredQuestions,
+      totalMasail, publishedMasail, unpublishedMasail,
+      totalQuestions, pendingQuestions, answeredQuestions,
       totalBooks
     ] = await Promise.all([
       Masail.countDocuments(),
@@ -177,35 +166,23 @@ router.get('/stats', protect, async (req, res) => {
     ]);
 
     const recentQuestions = await Question.find()
-      .sort({ createdAt: -1 })
-      .limit(5)
+      .sort({ createdAt: -1 }).limit(5)
       .select('name topic status createdAt');
 
     const recentMasail = await Masail.find()
-      .sort({ createdAt: -1 })
-      .limit(5)
+      .sort({ createdAt: -1 }).limit(5)
       .select('masailNumber titleUrdu category isPublished createdAt');
 
     res.json({
       success: true,
       data: {
-        totalMasail,
-        publishedMasail,
-        unpublishedMasail,
-        totalQuestions,
-        pendingQuestions,
-        answeredQuestions,
-        totalBooks,
-        recentQuestions,
-        recentMasail
+        totalMasail, publishedMasail, unpublishedMasail,
+        totalQuestions, pendingQuestions, answeredQuestions,
+        totalBooks, recentQuestions, recentMasail
       }
     });
-
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
@@ -214,19 +191,10 @@ router.get('/stats', protect, async (req, res) => {
 // MASAIL MANAGEMENT
 // ══════════════════════════════════════════════
 
-// GET /api/admin/masail
 router.get('/masail', protect, async (req, res) => {
   try {
-    const {
-      page = 1,
-      limit = 20,
-      status,
-      category,
-      search
-    } = req.query;
-
+    const { page = 1, limit = 20, status, category, search } = req.query;
     const query = {};
-
     if (status === 'published') query.isPublished = true;
     if (status === 'unpublished') query.isPublished = false;
     if (category) query.category = category;
@@ -235,165 +203,63 @@ router.get('/masail', protect, async (req, res) => {
     const currentPage = Math.max(parseInt(page) || 1, 1);
     const perPage = Math.max(parseInt(limit) || 20, 1);
     const skip = (currentPage - 1) * perPage;
-
     const total = await Masail.countDocuments(query);
+    const list = await Masail.find(query).sort({ createdAt: -1 }).skip(skip).limit(perPage);
 
-    const list = await Masail.find(query)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(perPage);
-
-    res.json({
-      success: true,
-      total,
-      page: currentPage,
-      pages: Math.ceil(total / perPage),
-      data: list
-    });
-
+    res.json({ success: true, total, page: currentPage, pages: Math.ceil(total / perPage), data: list });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
-
-// GET /api/admin/masail/:id
 router.get('/masail/:id', protect, async (req, res) => {
   try {
     const masail = await Masail.findById(req.params.id);
-
-    if (!masail) {
-      return res.status(404).json({
-        success: false,
-        message: 'Masail not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      data: masail
-    });
-
+    if (!masail) return res.status(404).json({ success: false, message: 'Masail not found' });
+    res.json({ success: true, data: masail });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
-
-// POST /api/admin/masail
 router.post('/masail', protect, async (req, res) => {
   try {
     const masail = await Masail.create(req.body);
-
-    res.status(201).json({
-      success: true,
-      message: 'Masail created successfully',
-      data: masail
-    });
-
+    res.status(201).json({ success: true, message: 'Masail created successfully', data: masail });
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
+    res.status(400).json({ success: false, message: error.message });
   }
 });
 
-
-// PUT /api/admin/masail/:id
 router.put('/masail/:id', protect, async (req, res) => {
   try {
-    const masail = await Masail.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
-
-    if (!masail) {
-      return res.status(404).json({
-        success: false,
-        message: 'Masail not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Masail updated successfully',
-      data: masail
-    });
-
+    const masail = await Masail.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    if (!masail) return res.status(404).json({ success: false, message: 'Masail not found' });
+    res.json({ success: true, message: 'Masail updated successfully', data: masail });
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
+    res.status(400).json({ success: false, message: error.message });
   }
 });
 
-
-// DELETE /api/admin/masail/:id
 router.delete('/masail/:id', protect, async (req, res) => {
   try {
     const masail = await Masail.findById(req.params.id);
-
-    if (!masail) {
-      return res.status(404).json({
-        success: false,
-        message: 'Masail not found'
-      });
-    }
-
+    if (!masail) return res.status(404).json({ success: false, message: 'Masail not found' });
     await masail.deleteOne();
-
-    res.json({
-      success: true,
-      message: 'Masail deleted successfully'
-    });
-
+    res.json({ success: true, message: 'Masail deleted successfully' });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
-
-// PUT /api/admin/masail/:id/feature
 router.put('/masail/:id/feature', protect, async (req, res) => {
   try {
     await Masail.updateMany({}, { isFeatured: false });
-
-    const masail = await Masail.findByIdAndUpdate(
-      req.params.id,
-      { isFeatured: true },
-      { new: true }
-    );
-
-    if (!masail) {
-      return res.status(404).json({
-        success: false,
-        message: 'Masail not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Featured masail updated successfully',
-      data: masail
-    });
-
+    const masail = await Masail.findByIdAndUpdate(req.params.id, { isFeatured: true }, { new: true });
+    if (!masail) return res.status(404).json({ success: false, message: 'Masail not found' });
+    res.json({ success: true, message: 'Featured masail updated successfully', data: masail });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
@@ -402,20 +268,11 @@ router.put('/masail/:id/feature', protect, async (req, res) => {
 // QUESTION MANAGEMENT
 // ══════════════════════════════════════════════
 
-// GET /api/admin/questions
 router.get('/questions', protect, async (req, res) => {
   try {
-    const {
-      page = 1,
-      limit = 20,
-      status,
-      search
-    } = req.query;
-
+    const { page = 1, limit = 20, status, search } = req.query;
     const query = {};
-
     if (status) query.status = status;
-
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
@@ -425,88 +282,40 @@ router.get('/questions', protect, async (req, res) => {
         { topic: { $regex: search, $options: 'i' } }
       ];
     }
-
     const currentPage = Math.max(parseInt(page) || 1, 1);
     const perPage = Math.max(parseInt(limit) || 20, 1);
     const skip = (currentPage - 1) * perPage;
-
     const total = await Question.countDocuments(query);
-
-    const list = await Question.find(query)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(perPage);
-
-    res.json({
-      success: true,
-      total,
-      page: currentPage,
-      pages: Math.ceil(total / perPage),
-      data: list
-    });
-
+    const list = await Question.find(query).sort({ createdAt: -1 }).skip(skip).limit(perPage);
+    res.json({ success: true, total, page: currentPage, pages: Math.ceil(total / perPage), data: list });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
-
-// GET /api/admin/questions/:id
 router.get('/questions/:id', protect, async (req, res) => {
   try {
     const question = await Question.findById(req.params.id).populate('masailPostId');
-
-    if (!question) {
-      return res.status(404).json({
-        success: false,
-        message: 'Question not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      data: question
-    });
-
+    if (!question) return res.status(404).json({ success: false, message: 'Question not found' });
+    res.json({ success: true, data: question });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
-
-// PUT /api/admin/questions/:id/reply
 router.put('/questions/:id/reply', protect, async (req, res) => {
   try {
     const { replyText, adminNotes } = req.body;
-
-    if (!replyText) {
-      return res.status(400).json({
-        success: false,
-        message: 'Reply text is required'
-      });
-    }
+    if (!replyText) return res.status(400).json({ success: false, message: 'Reply text is required' });
 
     const question = await Question.findById(req.params.id);
-
-    if (!question) {
-      return res.status(404).json({
-        success: false,
-        message: 'Question not found'
-      });
-    }
+    if (!question) return res.status(404).json({ success: false, message: 'Question not found' });
 
     question.replyText = replyText;
     question.adminNotes = adminNotes || question.adminNotes;
     question.status = 'answered';
     question.replySent = true;
     question.replySentAt = new Date();
-
     await question.save();
 
     try {
@@ -520,25 +329,17 @@ router.put('/questions/:id/reply', protect, async (req, res) => {
               <h2 style="color:#e8c97a;margin:0;">مسائل اسلامیہ</h2>
               <p style="color:#c9a84c;margin:5px 0 0;font-size:12px;">MASAIL ISLAMIA</p>
             </div>
-
             <p>Dear <strong>${question.name}</strong>,</p>
             <p>Your question has been answered by <strong>Hazrat Mufti Rafiq Purkar Madni</strong>.</p>
-
             <div style="background:#fff;border-radius:8px;padding:16px;margin:16px 0;">
               <p style="font-size:12px;color:#777;margin:0 0 8px;">YOUR QUESTION</p>
               <p style="direction:rtl;text-align:right;margin:0;">${question.questionText}</p>
             </div>
-
             <div style="background:#f0fff4;border-radius:8px;padding:16px;margin:16px 0;">
               <p style="font-size:12px;color:#2d6e47;margin:0 0 8px;">ANSWER — جواب</p>
               <p style="direction:rtl;text-align:right;margin:0;">${replyText}</p>
             </div>
-
-            <p style="font-size:13px">
-              📞 +91 9322576336 <br>
-              📧 faisalvanu18@gmail.com
-            </p>
-
+            <p style="font-size:13px">📞 +91 9322576336 <br>📧 faisalvanu18@gmail.com</p>
             <hr>
             <p style="font-size:11px;color:#999;text-align:center;">© Masail Islamia</p>
           </div>
@@ -548,183 +349,77 @@ router.put('/questions/:id/reply', protect, async (req, res) => {
       console.log('Reply email failed:', mailError.message);
     }
 
-    res.json({
-      success: true,
-      message: 'Reply sent successfully',
-      data: question
-    });
-
+    res.json({ success: true, message: 'Reply sent successfully', data: question });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
-
-// PUT /api/admin/questions/:id/status
 router.put('/questions/:id/status', protect, async (req, res) => {
   try {
     const { status } = req.body;
-
     const allowedStatuses = ['pending', 'reviewed', 'answered', 'published'];
-
-    if (!allowedStatuses.includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid status'
-      });
-    }
-
-    const question = await Question.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true, runValidators: true }
-    );
-
-    if (!question) {
-      return res.status(404).json({
-        success: false,
-        message: 'Question not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Question status updated',
-      data: question
-    });
-
+    if (!allowedStatuses.includes(status)) return res.status(400).json({ success: false, message: 'Invalid status' });
+    const question = await Question.findByIdAndUpdate(req.params.id, { status }, { new: true, runValidators: true });
+    if (!question) return res.status(404).json({ success: false, message: 'Question not found' });
+    res.json({ success: true, message: 'Question status updated', data: question });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(400).json({ success: false, message: error.message });
   }
 });
 
-
-// PUT /api/admin/questions/:id/notes
 router.put('/questions/:id/notes', protect, async (req, res) => {
   try {
     const { adminNotes } = req.body;
-
-    const question = await Question.findByIdAndUpdate(
-      req.params.id,
-      { adminNotes: adminNotes || '' },
-      { new: true }
-    );
-
-    if (!question) {
-      return res.status(404).json({
-        success: false,
-        message: 'Question not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Notes updated successfully',
-      data: question
-    });
-
+    const question = await Question.findByIdAndUpdate(req.params.id, { adminNotes: adminNotes || '' }, { new: true });
+    if (!question) return res.status(404).json({ success: false, message: 'Question not found' });
+    res.json({ success: true, message: 'Notes updated successfully', data: question });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
-
-// DELETE /api/admin/questions/:id
 router.delete('/questions/:id', protect, async (req, res) => {
   try {
     const question = await Question.findById(req.params.id);
-
-    if (!question) {
-      return res.status(404).json({
-        success: false,
-        message: 'Question not found'
-      });
-    }
-
+    if (!question) return res.status(404).json({ success: false, message: 'Question not found' });
     await question.deleteOne();
-
-    res.json({
-      success: true,
-      message: 'Question deleted successfully'
-    });
-
+    res.json({ success: true, message: 'Question deleted successfully' });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
 
 // ══════════════════════════════════════════════
-// BOOK MANAGEMENT
+// BOOK MANAGEMENT  (Cloudinary-powered)
 // ══════════════════════════════════════════════
 
 // GET /api/admin/books
 router.get('/books', protect, async (req, res) => {
   try {
     const books = await Book.find().sort({ createdAt: -1 });
-
-    res.json({
-      success: true,
-      data: books
-    });
-
+    res.json({ success: true, data: books });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
-
 
 // GET /api/admin/books/:id
 router.get('/books/:id', protect, async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
-
-    if (!book) {
-      return res.status(404).json({
-        success: false,
-        message: 'Book not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      data: book
-    });
-
+    if (!book) return res.status(404).json({ success: false, message: 'Book not found' });
+    res.json({ success: true, data: book });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
-
-// POST /api/admin/books
+// POST /api/admin/books  ← uploads PDF to Cloudinary
 router.post('/books', protect, upload.single('bookFile'), async (req, res) => {
   try {
-    const {
-      titleUrdu,
-      titleEnglish,
-      authorUrdu,
-      category,
-      isPublished
-    } = req.body;
+    const { titleUrdu, titleEnglish, authorUrdu, category, isPublished } = req.body;
 
     if (!titleUrdu || !titleEnglish || !authorUrdu || !category) {
       return res.status(400).json({
@@ -734,19 +429,19 @@ router.post('/books', protect, upload.single('bookFile'), async (req, res) => {
     }
 
     if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        message: 'PDF file is required'
-      });
+      return res.status(400).json({ success: false, message: 'PDF file is required' });
     }
+
+    // Cloudinary gives us a permanent public URL in req.file.path
+    const cloudinaryUrl = req.file.path;
 
     const book = await Book.create({
       titleUrdu,
       titleEnglish,
       authorUrdu,
       category,
-      fileName: req.file.filename,
-      fileUrl: `/uploads/books/${req.file.filename}`,
+      fileName: req.file.filename || req.file.originalname,
+      fileUrl: cloudinaryUrl,        // permanent Cloudinary https:// URL
       fileSize: req.file.size,
       mimeType: req.file.mimetype,
       isPublished: String(isPublished) === 'false' ? false : true
@@ -759,76 +454,51 @@ router.post('/books', protect, upload.single('bookFile'), async (req, res) => {
     });
 
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
+    res.status(400).json({ success: false, message: error.message });
   }
 });
-
 
 // PUT /api/admin/books/:id
 router.put('/books/:id', protect, async (req, res) => {
   try {
-    const book = await Book.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
-
-    if (!book) {
-      return res.status(404).json({
-        success: false,
-        message: 'Book not found'
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Book updated successfully',
-      data: book
-    });
-
+    const book = await Book.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    if (!book) return res.status(404).json({ success: false, message: 'Book not found' });
+    res.json({ success: true, message: 'Book updated successfully', data: book });
   } catch (error) {
-    res.status(400).json({
-      success: false,
-      message: error.message
-    });
+    res.status(400).json({ success: false, message: error.message });
   }
 });
 
-
-// DELETE /api/admin/books/:id
+// DELETE /api/admin/books/:id  ← also deletes from Cloudinary
 router.delete('/books/:id', protect, async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
+    if (!book) return res.status(404).json({ success: false, message: 'Book not found' });
 
-    if (!book) {
-      return res.status(404).json({
-        success: false,
-        message: 'Book not found'
-      });
-    }
-
-    if (book.fileName) {
-      const fullPath = path.join(booksUploadDir, book.fileName);
-      if (fs.existsSync(fullPath)) {
-        fs.unlinkSync(fullPath);
+    // Delete from Cloudinary if URL is a Cloudinary URL
+    if (book.fileUrl && book.fileUrl.includes('cloudinary.com')) {
+      try {
+        // Extract public_id from the URL
+        const urlParts = book.fileUrl.split('/');
+        const uploadIndex = urlParts.indexOf('upload');
+        if (uploadIndex !== -1) {
+          // Skip version segment (v1234567) if present
+          let publicIdParts = urlParts.slice(uploadIndex + 1);
+          if (publicIdParts[0] && publicIdParts[0].startsWith('v')) {
+            publicIdParts = publicIdParts.slice(1);
+          }
+          const publicId = publicIdParts.join('/').replace('.pdf', '');
+          await cloudinary.uploader.destroy(publicId, { resource_type: 'raw' });
+        }
+      } catch (cloudErr) {
+        console.log('Cloudinary delete failed (non-critical):', cloudErr.message);
       }
     }
 
     await book.deleteOne();
-
-    res.json({
-      success: true,
-      message: 'Book deleted successfully'
-    });
-
+    res.json({ success: true, message: 'Book deleted successfully' });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
@@ -837,56 +507,30 @@ router.delete('/books/:id', protect, async (req, res) => {
 // ADMIN PASSWORD CHANGE
 // ══════════════════════════════════════════════
 
-// PUT /api/admin/change-password
 router.put('/change-password', protect, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
 
     if (!currentPassword || !newPassword) {
-      return res.status(400).json({
-        success: false,
-        message: 'Current password and new password are required'
-      });
+      return res.status(400).json({ success: false, message: 'Current password and new password are required' });
     }
 
     if (newPassword.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: 'New password must be at least 6 characters'
-      });
+      return res.status(400).json({ success: false, message: 'New password must be at least 6 characters' });
     }
 
     const admin = await Admin.findById(req.admin._id).select('+password');
-
-    if (!admin) {
-      return res.status(404).json({
-        success: false,
-        message: 'Admin not found'
-      });
-    }
+    if (!admin) return res.status(404).json({ success: false, message: 'Admin not found' });
 
     const isMatch = await admin.matchPassword(currentPassword);
-
-    if (!isMatch) {
-      return res.status(400).json({
-        success: false,
-        message: 'Current password is incorrect'
-      });
-    }
+    if (!isMatch) return res.status(400).json({ success: false, message: 'Current password is incorrect' });
 
     admin.password = newPassword;
     await admin.save();
 
-    res.json({
-      success: true,
-      message: 'Password changed successfully'
-    });
-
+    res.json({ success: true, message: 'Password changed successfully' });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 });
 
