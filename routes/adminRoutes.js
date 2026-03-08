@@ -26,22 +26,11 @@ cloudinary.config({
 });
 
 // ─────────────────────────────────────────────
-// Multer → Cloudinary storage for PDF books
+// Multer memory storage — we upload the buffer
+// directly to Cloudinary to avoid any corruption
 // ─────────────────────────────────────────────
-const storage = new CloudinaryStorage({
-  cloudinary,
-  params: {
-    folder: 'masail-islamia/books',   // folder name in your Cloudinary account
-    resource_type: 'raw',             // required for PDFs (not images)
-    public_id: (req, file) => {
-      const safeName = file.originalname.replace(/\s+/g, '-').replace('.pdf', '');
-      return `${Date.now()}-${safeName}`;
-    }
-  }
-});
-
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   fileFilter: (req, file, cb) => {
     if (file.mimetype === 'application/pdf') {
       cb(null, true);
@@ -431,16 +420,28 @@ router.post('/books', protect, upload.single('bookFile'), async (req, res) => {
       return res.status(400).json({ success: false, message: 'PDF file is required' });
     }
 
-    // Cloudinary gives us a permanent public URL in req.file.path
-    const cloudinaryUrl = req.file.path;
+    // Upload buffer directly to Cloudinary (prevents corruption)
+    const safeName = req.file.originalname.replace(/\s+/g, '-').replace(/\.pdf$/i, '');
+    const publicId = `masail-islamia/books/${Date.now()}-${safeName}`;
+
+    const uploadResult = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { resource_type: 'raw', public_id: publicId },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      stream.end(req.file.buffer);
+    });
 
     const book = await Book.create({
       titleUrdu,
       titleEnglish,
       authorUrdu,
       category,
-      fileName: req.file.filename || req.file.originalname,
-      fileUrl: cloudinaryUrl,        // permanent Cloudinary https:// URL
+      fileName: req.file.originalname,
+      fileUrl: uploadResult.secure_url,
       fileSize: req.file.size,
       mimeType: req.file.mimetype,
       isPublished: String(isPublished) === 'false' ? false : true
