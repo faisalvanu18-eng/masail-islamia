@@ -11,21 +11,35 @@ const SITE = 'https://masail-islamia.onrender.com';
 window.addEventListener('DOMContentLoaded', () => {
   const intro = document.getElementById('intro');
 
-  if (intro) {
-    setTimeout(() => {
-      intro.classList.add('hide');
-      setTimeout(() => {
-        intro.style.display = 'none';
-        handleInitialState();
-      }, 1000);
-    }, 3800);
-  } else {
-    handleInitialState();
-  }
-
   bindCategoryClicks();
   bindBooksButton();
   bindAskForm();
+
+  if (intro) {
+    setTimeout(() => {
+      intro.classList.add('hide');
+
+      setTimeout(() => {
+        intro.style.display = 'none';
+        handleInitialState();
+        afterIntroLoad();
+      }, 1000);
+    }, 3800);
+
+    setTimeout(() => {
+      if (intro && intro.style.display !== 'none') {
+        intro.style.display = 'none';
+        handleInitialState();
+        afterIntroLoad();
+      }
+    }, 5200);
+  } else {
+    handleInitialState();
+    afterIntroLoad();
+  }
+});
+
+function afterIntroLoad() {
   loadFeatured();
 
   if (document.body.dataset.page === 'category') {
@@ -35,7 +49,7 @@ window.addEventListener('DOMContentLoaded', () => {
   if (document.body.dataset.page === 'books') {
     loadBooksPage();
   }
-});
+}
 
 function handleInitialState() {
   if (location.hash === '#detail') {
@@ -51,7 +65,9 @@ function hideIntro() {
   const intro = document.getElementById('intro');
   if (!intro) return;
   intro.classList.add('hide');
-  setTimeout(() => { intro.remove(); }, 1000);
+  setTimeout(() => {
+    intro.remove();
+  }, 1000);
 }
 
 /* ─────────────────────────────────────────────
@@ -214,7 +230,11 @@ async function fetchCategoryMasail(category, search = '') {
     const res = await fetch(`${API}/masail?${params.toString()}`);
     const json = await res.json();
 
-    if (!json.success) { renderCategoryMasail([]); return; }
+    if (!json.success) {
+      renderCategoryMasail([]);
+      return;
+    }
+
     renderCategoryMasail(json.data || []);
   } catch (error) {
     console.log('Category masail load failed:', error.message);
@@ -294,7 +314,9 @@ function openCategoryDetail(item) {
 function bindBooksButton() {
   const btn = document.getElementById('books-page-btn');
   if (!btn) return;
-  btn.addEventListener('click', () => { window.location.href = '/books.html'; });
+  btn.addEventListener('click', () => {
+    window.location.href = '/books.html';
+  });
 }
 
 /* ─────────────────────────────────────────────
@@ -316,7 +338,11 @@ async function fetchBooks() {
     const res = await fetch(`${API}/books?${params.toString()}`);
     const json = await res.json();
 
-    if (!json.success) { renderBooks([]); return; }
+    if (!json.success) {
+      renderBooks([]);
+      return;
+    }
+
     renderBooks(json.data || []);
   } catch (error) {
     console.log('Books load failed:', error.message);
@@ -340,7 +366,6 @@ function renderBooks(list) {
 
   list.forEach(book => {
     const bookId = book._id || '';
-    const bookTitle = escapeHtml(book.titleEnglish || book.titleUrdu || 'book');
 
     const item = document.createElement('div');
     item.className = 'bk';
@@ -353,7 +378,7 @@ function renderBooks(list) {
         <div class="bk-desc">مصنف: ${escapeHtml(book.authorUrdu || '')}</div>
         <div class="bk-desc">Category: ${escapeHtml(book.category || '')}</div>
       </div>
-      <button class="btn-dl" type="button" id="dl-btn-${bookId}" onclick="downloadBook('${bookId}', '${bookTitle}')">
+      <button class="btn-dl" type="button" id="dl-btn-${bookId}" onclick="downloadBook('${bookId}')">
         ⬇ Download Book
       </button>
     `;
@@ -362,7 +387,7 @@ function renderBooks(list) {
 }
 
 /* ─────────────────────────────────────────────
-   DOWNLOAD BOOK — force save as PDF file
+   DOWNLOAD BOOK
    ───────────────────────────────────────────── */
 async function downloadBook(bookId) {
   if (!bookId) {
@@ -370,7 +395,7 @@ async function downloadBook(bookId) {
     return;
   }
 
-  const btn = document.getElementById('dl-btn-' + bookId);
+  const btn = document.getElementById(`dl-btn-${bookId}`);
   const originalText = btn ? btn.innerHTML : '⬇ Download Book';
 
   try {
@@ -383,17 +408,15 @@ async function downloadBook(bookId) {
     const json = await res.json();
 
     if (!json.success || !json.url) {
-      throw new Error('Book file not found');
+      throw new Error(json.message || 'Book file not found');
     }
 
-    const fileUrl = json.url.startsWith('http') ? json.url : `${SITE}${json.url}`;
-
-    // Add fl_attachment to force Cloudinary to download instead of preview
-    <a href="${book.fileUrl}" download>Download</a>
+    const fileUrl = /^https?:\/\//i.test(json.url) ? json.url : `${SITE}${json.url}`;
 
     const a = document.createElement('a');
-    a.href = downloadUrl;
+    a.href = fileUrl;
     a.target = '_blank';
+    a.rel = 'noopener noreferrer';
     a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
@@ -463,7 +486,9 @@ async function submitQ() {
 
     const json = await res.json();
 
-    if (!json.success) { throw new Error(json.message || 'Server error'); }
+    if (!json.success) {
+      throw new Error(json.message || 'Server error');
+    }
 
     btn.innerHTML = '✓ سوال کامیابی سے بھیج دیا گیا';
     btn.style.background = 'linear-gradient(135deg, #1a7a3a, #267a6a)';
@@ -483,7 +508,6 @@ async function submitQ() {
       btn.style.background = '';
       btn.innerHTML = getSubmitButtonMarkup();
     }, 2200);
-
   } catch (err) {
     console.error('submitQ error:', err);
     showToast(err.message || 'Server error, please try again later');
@@ -519,7 +543,9 @@ function setText(id, text) {
 function fmtDate(d) {
   if (!d) return '';
   return new Date(d).toLocaleDateString('en-GB', {
-    day: '2-digit', month: 'long', year: 'numeric'
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
   });
 }
 

@@ -4,12 +4,7 @@ const fs = require('fs');
 const router = express.Router();
 const Book = require('../models/book');
 
-/* ─────────────────────────────────────────────
-   GET all published books
-   /api/books
-   /api/books?category=Namaz
-   /api/books?search=fiqh
-   ───────────────────────────────────────────── */
+/* GET all published books */
 router.get('/', async (req, res) => {
   try {
     const { category, search } = req.query;
@@ -24,7 +19,8 @@ router.get('/', async (req, res) => {
       query.$or = [
         { titleUrdu: { $regex: search, $options: 'i' } },
         { titleEnglish: { $regex: search, $options: 'i' } },
-        { authorUrdu: { $regex: search, $options: 'i' } }
+        { authorUrdu: { $regex: search, $options: 'i' } },
+        { authorEnglish: { $regex: search, $options: 'i' } }
       ];
     }
 
@@ -43,17 +39,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-/* ─────────────────────────────────────────────
-   IMPORTANT: /download/:id MUST come BEFORE /:id
-   otherwise Express matches "download" as an ID
-   ───────────────────────────────────────────── */
-
-/* ─────────────────────────────────────────────
-   DOWNLOAD book — returns JSON { success, url }
-   for BOTH local and external files so the
-   frontend can open/download consistently.
-   /api/books/download/:id
-   ───────────────────────────────────────────── */
+/* DOWNLOAD book */
 router.get('/download/:id', async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
@@ -72,44 +58,48 @@ router.get('/download/:id', async (req, res) => {
       });
     }
 
-    // Increment download count
-    book.downloadCount = (book.downloadCount || 0) + 1;
-    await book.save();
+    let fileUrl = String(book.fileUrl).trim();
 
-    const fileUrl = String(book.fileUrl).trim();
-
-    // External URL — return as-is
+    // External file
     if (/^https?:\/\//i.test(fileUrl)) {
+      book.downloadCount = (book.downloadCount || 0) + 1;
+      await book.save();
+
       return res.json({
         success: true,
         url: fileUrl
       });
     }
 
-    // Local uploaded file — verify it exists then return a public URL
-    if (fileUrl.startsWith('/uploads/') || fileUrl.startsWith('/upload/')) {
-      const relativePath = fileUrl.replace(/^\/+/, '');
-      const filePath = path.join(__dirname, '..', relativePath);
+    // Normalize old /uploads path to /upload
+    if (fileUrl.startsWith('/uploads/')) {
+      fileUrl = fileUrl.replace('/uploads/', '/upload/');
+    }
 
-      if (!fs.existsSync(filePath)) {
-        return res.status(404).json({
-          success: false,
-          message: 'Book file does not exist on server'
-        });
-      }
-
-      // Return the public URL so the browser can download it directly
-      return res.json({
-        success: true,
-        url: fileUrl   // e.g. "/uploads/books/filename.pdf"
+    if (!fileUrl.startsWith('/upload/')) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid book file path'
       });
     }
 
-    return res.status(400).json({
-      success: false,
-      message: 'Invalid book file path'
-    });
+    const relativePath = fileUrl.replace(/^\/+/, '');
+    const filePath = path.join(__dirname, '..', relativePath);
 
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({
+        success: false,
+        message: 'Book file does not exist on server'
+      });
+    }
+
+    book.downloadCount = (book.downloadCount || 0) + 1;
+    await book.save();
+
+    return res.json({
+      success: true,
+      url: fileUrl
+    });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -118,10 +108,7 @@ router.get('/download/:id', async (req, res) => {
   }
 });
 
-/* ─────────────────────────────────────────────
-   GET book by ID
-   /api/books/:id
-   ───────────────────────────────────────────── */
+/* GET book by ID */
 router.get('/:id', async (req, res) => {
   try {
     const book = await Book.findById(req.params.id);
