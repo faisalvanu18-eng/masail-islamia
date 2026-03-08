@@ -14,7 +14,6 @@ window.addEventListener('DOMContentLoaded', () => {
   bindBooksButton();
   loadFeatured();
 
-  // Auto page detection
   if (document.body.dataset.page === 'category') {
     loadCategoryPage();
   }
@@ -23,7 +22,6 @@ window.addEventListener('DOMContentLoaded', () => {
     loadBooksPage();
   }
 });
-
 
 /* ─────────────────────────────────────────────
    NAV DRAWER
@@ -37,7 +35,6 @@ function closeNav() {
   document.getElementById('navDrawer')?.classList.remove('open');
   document.getElementById('navScrim')?.classList.remove('open');
 }
-
 
 /* ─────────────────────────────────────────────
    DETAIL PAGE
@@ -54,7 +51,6 @@ function closeDetail() {
   window.scrollTo(0, 0);
 }
 
-
 /* ─────────────────────────────────────────────
    FEATURED MASAIL
    ───────────────────────────────────────────── */
@@ -63,7 +59,12 @@ async function loadFeatured() {
     const res = await fetch(`${API}/masail`);
     const json = await res.json();
 
-    if (!json.success) return;
+    if (!json.success || !json.data || !json.data.length) {
+      setText('masail-title', 'فی الحال کوئی مسئلہ موجود نہیں ہے');
+      setText('masail-excerpt', 'No masail available right now');
+      setText('masail-date', '');
+      return;
+    }
 
     const m = json.data[0];
     window._masail = m;
@@ -81,7 +82,6 @@ async function loadFeatured() {
   }
 }
 
-
 /* ─────────────────────────────────────────────
    OPEN DETAIL WITH LIVE DATA
    ───────────────────────────────────────────── */
@@ -89,21 +89,22 @@ function openDetailFull() {
   const m = window._masail;
   if (!m) return;
 
-  setText('d-num', `MASAIL NO. ${m.masailNumber} — ${fmtDate(m.publishedDate).toUpperCase()}`);
-  setText('d-title', m.titleUrdu);
-  setText('d-cat', m.category);
+  setText('d-num', `MASAIL NO. ${m.masailNumber || ''} — ${fmtDate(m.publishedDate).toUpperCase()}`);
+  setText('d-title', m.titleUrdu || '');
+  setText('d-cat', m.category || '');
   setText('d-mad', `Fiqh · ${m.madhab || 'Shafi'}`);
   setText('d-date', fmtDate(m.publishedDate));
- document.getElementById('d-q').innerHTML =
-  (m.questionUrdu || '').replace(/\n/g, "<br>");
 
-document.getElementById('d-a').innerHTML =
-  (m.answerUrdu || '').replace(/\n/g, "<br>");
+  const qEl = document.getElementById('d-q');
+  const aEl = document.getElementById('d-a');
+
+  if (qEl) qEl.innerHTML = (m.questionUrdu || '').replace(/\n/g, '<br><br>');
+  if (aEl) aEl.innerHTML = (m.answerUrdu || '').replace(/\n/g, '<br><br>');
+
   setText('d-ref', m.reference || 'درمختار، رد المحتار، فتاوی عالمگیری');
 
   openDetail();
 }
-
 
 /* ─────────────────────────────────────────────
    CATEGORY SEE MORE / SEE LESS
@@ -123,10 +124,8 @@ function toggleCats() {
   }
 }
 
-
 /* ─────────────────────────────────────────────
    CATEGORY CLICK → OPEN CATEGORY PAGE
-   Add data-category="Namaz" etc on each category box
    ───────────────────────────────────────────── */
 function bindCategoryClicks() {
   const boxes = document.querySelectorAll('.cat-box');
@@ -141,23 +140,14 @@ function bindCategoryClicks() {
   });
 }
 
-
 /* ─────────────────────────────────────────────
    CATEGORY PAGE LOAD
-   Requires category.html with:
-   body data-page="category"
-   and elements:
-   category-title
-   category-search
-   category-results
-   category-empty
    ───────────────────────────────────────────── */
 async function loadCategoryPage() {
   const params = new URLSearchParams(window.location.search);
   const category = params.get('category') || '';
 
   setText('category-title', category || 'Category');
-
   await fetchCategoryMasail(category);
 }
 
@@ -233,22 +223,25 @@ function searchInCategory() {
 function openCategoryDetail(item) {
   window._masail = item;
 
-  setText('d-num', `MASAIL NO. ${item.masailNumber} — ${fmtDate(item.publishedDate).toUpperCase()}`);
-  setText('d-title', item.titleUrdu);
-  setText('d-cat', item.category);
+  setText('d-num', `MASAIL NO. ${item.masailNumber || ''} — ${fmtDate(item.publishedDate).toUpperCase()}`);
+  setText('d-title', item.titleUrdu || '');
+  setText('d-cat', item.category || '');
   setText('d-mad', `Fiqh · ${item.madhab || 'Shafi'}`);
   setText('d-date', fmtDate(item.publishedDate));
-  setText('d-q', item.questionUrdu);
-  setText('d-a', item.answerUrdu);
+
+  const qEl = document.getElementById('d-q');
+  const aEl = document.getElementById('d-a');
+
+  if (qEl) qEl.innerHTML = (item.questionUrdu || '').replace(/\n/g, '<br><br>');
+  if (aEl) aEl.innerHTML = (item.answerUrdu || '').replace(/\n/g, '<br><br>');
+
   setText('d-ref', item.reference || 'درمختار، رد المحتار، فتاوی عالمگیری');
 
   openDetail();
 }
 
-
 /* ─────────────────────────────────────────────
    BOOKS PAGE BUTTON
-   Add id="books-page-btn" on your home page button
    ───────────────────────────────────────────── */
 function bindBooksButton() {
   const btn = document.getElementById('books-page-btn');
@@ -259,15 +252,8 @@ function bindBooksButton() {
   });
 }
 
-
 /* ─────────────────────────────────────────────
    LOAD BOOKS PAGE
-   Requires books.html with:
-   body data-page="books"
-   books-list
-   books-search
-   books-category
-   books-empty
    ───────────────────────────────────────────── */
 async function loadBooksPage() {
   await fetchBooks();
@@ -313,6 +299,10 @@ function renderBooks(list) {
   if (empty) empty.style.display = 'none';
 
   list.forEach(book => {
+    const fileUrl = book.fileUrl
+      ? (book.fileUrl.startsWith('http') ? book.fileUrl : `https://masail-islamia.onrender.com${book.fileUrl}`)
+      : '#';
+
     const item = document.createElement('div');
     item.className = 'bk';
     item.innerHTML = `
@@ -323,14 +313,13 @@ function renderBooks(list) {
         <div class="bk-desc">مصنف: ${escapeHtml(book.authorUrdu || '')}</div>
         <div class="bk-desc">Category: ${escapeHtml(book.category || '')}</div>
       </div>
-      <a class="btn-dl" href="${book.fileUrl}" target="_blank" rel="noopener noreferrer">
+      <a class="btn-dl" href="${fileUrl}" target="_blank" rel="noopener noreferrer">
         <span>Download PDF</span>
       </a>
     `;
     wrap.appendChild(item);
   });
 }
-
 
 /* ─────────────────────────────────────────────
    ASK FATWA SUBMIT
@@ -371,11 +360,17 @@ async function submitQ() {
     if (json.success) {
       showToast('آپ کا سوال کامیابی سے بھیج دیا گیا ✓');
 
-      document.getElementById('ask-name').value = '';
-      document.getElementById('ask-email').value = '';
-      document.getElementById('ask-phone').value = '';
-      document.getElementById('ask-q').value = '';
-      document.getElementById('ask-topic').selectedIndex = 0;
+      const n = document.getElementById('ask-name');
+      const e = document.getElementById('ask-email');
+      const p = document.getElementById('ask-phone');
+      const q = document.getElementById('ask-q');
+      const t = document.getElementById('ask-topic');
+
+      if (n) n.value = '';
+      if (e) e.value = '';
+      if (p) p.value = '';
+      if (q) q.value = '';
+      if (t) t.selectedIndex = 0;
     } else {
       showToast(json.message || 'Server error, please try again later');
     }
@@ -393,6 +388,7 @@ async function submitQ() {
     `;
   }
 }
+
 /* ─────────────────────────────────────────────
    UTILS
    ───────────────────────────────────────────── */
