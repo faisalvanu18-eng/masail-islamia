@@ -29,7 +29,12 @@ app.use(express.urlencoded({ extended: true }));
    STATIC FILES
    ───────────────────────────────────────────── */
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+/* IMPORTANT:
+   your actual folder is "upload", not "uploads"
+   so serve it correctly
+*/
+app.use('/upload', express.static(path.join(__dirname, 'upload')));
 
 /* ─────────────────────────────────────────────
    API ROUTES

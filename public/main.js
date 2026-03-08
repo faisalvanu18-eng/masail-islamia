@@ -3,6 +3,7 @@
    ============================================================ */
 
 const API = 'https://masail-islamia.onrender.com/api';
+const SITE = 'https://masail-islamia.onrender.com';
 
 /* ─────────────────────────────────────────────
    BOOT
@@ -12,6 +13,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
   bindCategoryClicks();
   bindBooksButton();
+  bindAskForm();
   loadFeatured();
 
   if (document.body.dataset.page === 'category') {
@@ -317,8 +319,8 @@ function renderBooks(list) {
         <div class="bk-desc">مصنف: ${escapeHtml(book.authorUrdu || '')}</div>
         <div class="bk-desc">Category: ${escapeHtml(book.category || '')}</div>
       </div>
-      <button class="btn-dl" type="button" id="dl-btn-${bookId}" onclick="readBook('${bookId}', '${bookTitle}')">
-        📖 Read Book
+      <button class="btn-dl" type="button" id="dl-btn-${bookId}" onclick="downloadBook('${bookId}', '${bookTitle}')">
+        ⬇ Download Book
       </button>
     `;
 
@@ -327,47 +329,71 @@ function renderBooks(list) {
 }
 
 /* ─────────────────────────────────────────────
-   READ BOOK — opens PDF in new tab directly
+   DOWNLOAD BOOK — force PDF download
    ───────────────────────────────────────────── */
-function readBook(bookId, bookTitle) {
+async function downloadBook(bookId) {
   if (!bookId) {
     showToast('Book not found');
     return;
   }
 
   const btn = document.getElementById('dl-btn-' + bookId);
-  if (btn) {
-    btn.disabled = true;
-    btn.textContent = '⏳ Opening...';
-  }
+  const originalText = btn ? btn.innerHTML : '⬇ Download Book';
 
-  fetch(API + '/books/download/' + bookId)
-    .then(res => res.json())
-    .then(json => {
-      if (!json.success || !json.url) {
-        showToast('کتاب نہیں کھل سکی — please try again');
-        return;
-      }
+  try {
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Downloading...';
+    }
 
-      const fileUrl = json.url.startsWith('http')
-        ? json.url
-        : 'https://masail-islamia.onrender.com' + json.url;
+    const a = document.createElement('a');
+    a.href = `${API}/books/download/${bookId}`;
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
 
-      window.open(fileUrl, '_blank');
-      showToast('کتاب کھل رہی ہے ✓');
-    })
-    .catch(() => showToast('کتاب نہیں کھل سکی — please try again'))
-    .finally(() => {
+    showToast('کتاب ڈاؤن لوڈ ہو رہی ہے ✓');
+  } catch (error) {
+    console.error('downloadBook error:', error);
+    showToast('کتاب ڈاؤن لوڈ نہیں ہو سکی');
+  } finally {
+    setTimeout(() => {
       if (btn) {
         btn.disabled = false;
-        btn.textContent = '📖 Read Book';
+        btn.innerHTML = originalText;
       }
-    });
+    }, 1500);
+  }
 }
-
 /* ─────────────────────────────────────────────
    ASK FATWA SUBMIT
    ───────────────────────────────────────────── */
+function bindAskForm() {
+  const form = document.getElementById('ask-form');
+  if (!form) return;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    await submitQ();
+  });
+
+  const btn = document.getElementById('sub-btn');
+  if (btn) {
+    btn.setAttribute('type', 'submit');
+  }
+}
+
+function getSubmitButtonMarkup() {
+  return `
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="22" y1="2" x2="11" y2="13"></line>
+      <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+    </svg>
+    <span>سوال بھیجیں · SUBMIT</span>
+  `;
+}
+
 async function submitQ() {
   const name  = getVal('ask-name');
   const email = getVal('ask-email');
@@ -395,57 +421,35 @@ async function submitQ() {
 
     const json = await res.json();
 
-    if (json.success) {
-      // Show success state on button
-      btn.innerHTML = '✓ سوال کامیابی سے بھیج دیا گیا';
-      btn.style.background = 'linear-gradient(135deg, #1a7a3a, #267a6a)';
-
-      showToast('آپ کا سوال کامیابی سے بھیج دیا گیا ✓');
-
-      // Clear all form fields
-      ['ask-name', 'ask-email', 'ask-phone', 'ask-q'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.value = '';
-      });
-      const t = document.getElementById('ask-topic');
-      if (t) t.selectedIndex = 0;
-
-      // Reset button after 3 seconds
-      setTimeout(() => {
-        btn.disabled = false;
-        btn.style.background = '';
-        btn.innerHTML = `
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <line x1="22" y1="2" x2="11" y2="13"></line>
-            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-          </svg>
-          <span>سوال بھیجیں · SUBMIT</span>
-        `;
-      }, 3000);
-
-    } else {
-      showToast(json.message || 'Server error, please try again later');
-      btn.disabled = false;
-      btn.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <line x1="22" y1="2" x2="11" y2="13"></line>
-          <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-        </svg>
-        <span>سوال بھیجیں · SUBMIT</span>
-      `;
+    if (!json.success) {
+      throw new Error(json.message || 'Server error');
     }
+
+    btn.innerHTML = '✓ سوال کامیابی سے بھیج دیا گیا';
+    btn.style.background = 'linear-gradient(135deg, #1a7a3a, #267a6a)';
+
+    showToast('Question submitted successfully ✓');
+
+    ['ask-name', 'ask-email', 'ask-phone', 'ask-q'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.value = '';
+    });
+
+    const t = document.getElementById('ask-topic');
+    if (t) t.selectedIndex = 0;
+
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.style.background = '';
+      btn.innerHTML = getSubmitButtonMarkup();
+    }, 2200);
 
   } catch (err) {
     console.error('submitQ error:', err);
-    showToast('Server error, please try again later');
+    showToast(err.message || 'Server error, please try again later');
     btn.disabled = false;
-    btn.innerHTML = `
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="22" y1="2" x2="11" y2="13"></line>
-        <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
-      </svg>
-      <span>سوال بھیجیں · SUBMIT</span>
-    `;
+    btn.style.background = '';
+    btn.innerHTML = getSubmitButtonMarkup();
   }
 }
 
