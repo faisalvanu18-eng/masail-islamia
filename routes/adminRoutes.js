@@ -422,7 +422,7 @@ router.post('/books', protect, upload.single('bookFile'), async (req, res) => {
 
     // Upload buffer directly to Cloudinary (prevents corruption)
     const safeName = req.file.originalname.replace(/\s+/g, '-').replace(/\.pdf$/i, '');
-    const publicId = `masail-islamia/books/${Date.now()}-${safeName}`;
+    const publicId = `masail-islamia/books/${Date.now()}-${safeName}.pdf`;
 
     const uploadResult = await new Promise((resolve, reject) => {
       const stream = cloudinary.uploader.upload_stream(

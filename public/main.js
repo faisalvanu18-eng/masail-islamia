@@ -393,9 +393,6 @@ function renderBooks(list) {
   });
 }
 
-/* ─────────────────────────────────────────────
-   DOWNLOAD BOOK — force download from Cloudinary URL
-   ───────────────────────────────────────────── */
 async function downloadBook(bookId) {
   if (!bookId) {
     showToast('Book not found');
@@ -420,8 +417,16 @@ async function downloadBook(bookId) {
 
     const fileUrl = json.url.startsWith('http') ? json.url : `${SITE}${json.url}`;
 
-        // Just open the Cloudinary URL directly in a new tab
-    window.open(fileUrl, '_blank');
+    // Open directly in new tab — Cloudinary serves it correctly
+    const a = document.createElement('a');
+    a.href = fileUrl;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.download = 'book.pdf';
+    a.style.display = 'none';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
 
     showToast('کتاب ڈاؤن لوڈ ہو رہی ہے ✓');
   } catch (error) {
