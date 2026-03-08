@@ -49,9 +49,10 @@ router.get('/', async (req, res) => {
    ───────────────────────────────────────────── */
 
 /* ─────────────────────────────────────────────
-   DOWNLOAD book file directly
+   DOWNLOAD book — returns JSON { success, url }
+   for BOTH local and external files so the
+   frontend can open/download consistently.
    /api/books/download/:id
-   Forces download instead of opening JSON
    ───────────────────────────────────────────── */
 router.get('/download/:id', async (req, res) => {
   try {
@@ -71,17 +72,13 @@ router.get('/download/:id', async (req, res) => {
       });
     }
 
+    // Increment download count
     book.downloadCount = (book.downloadCount || 0) + 1;
     await book.save();
 
-    const cleanFileName =
-      ((book.titleEnglish || book.titleUrdu || 'book')
-        .replace(/[<>:"/\\|?*]+/g, '')
-        .trim() || 'book') + '.pdf';
-
     const fileUrl = String(book.fileUrl).trim();
 
-    /* External file URL */
+    // External URL — return as-is
     if (/^https?:\/\//i.test(fileUrl)) {
       return res.json({
         success: true,
@@ -89,7 +86,7 @@ router.get('/download/:id', async (req, res) => {
       });
     }
 
-    /* Local uploaded file path */
+    // Local uploaded file — verify it exists then return a public URL
     if (fileUrl.startsWith('/uploads/') || fileUrl.startsWith('/upload/')) {
       const relativePath = fileUrl.replace(/^\/+/, '');
       const filePath = path.join(__dirname, '..', relativePath);
@@ -101,21 +98,13 @@ router.get('/download/:id', async (req, res) => {
         });
       }
 
-      return res.download(filePath, cleanFileName, (err) => {
-        if (err) {
-          console.error('Download error:', err.message);
-
-          if (!res.headersSent) {
-            return res.status(500).json({
-              success: false,
-              message: 'Unable to download file'
-            });
-          }
-        }
+      // Return the public URL so the browser can download it directly
+      return res.json({
+        success: true,
+        url: fileUrl   // e.g. "/uploads/books/filename.pdf"
       });
     }
 
-    /* Fallback */
     return res.status(400).json({
       success: false,
       message: 'Invalid book file path'

@@ -1,4 +1,5 @@
 const API = 'https://masail-islamia.onrender.com/api';
+const SITE = 'https://masail-islamia.onrender.com';
 
 window.addEventListener('DOMContentLoaded', () => {
   const token = localStorage.getItem('adminToken');
@@ -438,6 +439,11 @@ async function loadBooks() {
     wrap.innerHTML = '';
 
     (json.data || []).forEach(book => {
+      // ✅ FIX: Use live server URL instead of hardcoded localhost
+      const pdfUrl = book.fileUrl
+        ? (book.fileUrl.startsWith('http') ? book.fileUrl : `${SITE}${book.fileUrl}`)
+        : '#';
+
       wrap.innerHTML += `
         <div class="list-card">
           <div class="list-head">
@@ -446,7 +452,7 @@ async function loadBooks() {
               <div class="list-sub">${escapeHtml(book.titleEnglish)} · ${escapeHtml(book.category)} · Downloads ${book.downloadCount || 0}</div>
             </div>
             <div class="list-row-actions">
-              <a class="mini-btn view" href="http://localhost:5000${book.fileUrl}" target="_blank">Open PDF</a>
+              <a class="mini-btn view" href="${pdfUrl}" target="_blank" rel="noopener">Open PDF</a>
               <button class="mini-btn del" onclick='deleteBook("${book._id}")'>Delete</button>
             </div>
           </div>
