@@ -9,6 +9,9 @@
 @font-face {
     font-family: 'Jameel Noori Nastaleeq';
     src: url('/fonts/Jameel-Noori-Nastaleeq.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
 }
 :root {
   /* Warm ivory / gold / brown palette */
@@ -648,10 +651,3 @@ footer {
   animation:rot .7s linear infinite;
 }
 @keyframes rot{to{transform:rotate(360deg)}}
-body,
-h1, h2, h3, h4, h5, h6,
-p, div, span, a, button,
-input, textarea, select, label,
-li, td, th {
-  font-family: 'Jameel Noori Nastaleeq', serif !important;
-}
