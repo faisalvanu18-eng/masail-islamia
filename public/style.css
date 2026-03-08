@@ -105,7 +105,6 @@ img { display:block; max-width:100%; }
   visibility: hidden;
   pointer-events: none;
 }
-#intro.hide { opacity: 0; visibility: hidden; pointer-events: none; }
 
 .intr-grid {
   position: absolute; inset: 0; opacity: .05;

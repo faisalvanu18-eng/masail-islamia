@@ -23,7 +23,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
   bindCategoryClicks();
   bindBooksButton();
-  bindAskForm();
   loadFeatured();
 
   if (document.body.dataset.page === 'category') {
@@ -34,6 +33,17 @@ window.addEventListener('DOMContentLoaded', () => {
     loadBooksPage();
   }
 });
+
+function hideIntro() {
+  const intro = document.getElementById('intro');
+  if (!intro) return;
+
+  intro.classList.add('hide');
+
+  setTimeout(() => {
+    intro.remove();
+  }, 1000);
+}
 /* ─────────────────────────────────────────────
    NAV DRAWER
    ───────────────────────────────────────────── */
