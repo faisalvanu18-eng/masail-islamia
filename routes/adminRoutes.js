@@ -33,7 +33,6 @@ const storage = new CloudinaryStorage({
   params: {
     folder: 'masail-islamia/books',   // folder name in your Cloudinary account
     resource_type: 'raw',             // required for PDFs (not images)
-    format: 'pdf',
     public_id: (req, file) => {
       const safeName = file.originalname.replace(/\s+/g, '-').replace('.pdf', '');
       return `${Date.now()}-${safeName}`;
