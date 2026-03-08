@@ -388,19 +388,16 @@ async function downloadBook(bookId) {
 
     const fileUrl = json.url.startsWith('http') ? json.url : `${SITE}${json.url}`;
 
-    // Fetch the PDF as a blob and force save with .pdf extension
-    const pdfRes = await fetch(fileUrl);
-    const blob = await pdfRes.blob();
-    const blobUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+    // Add fl_attachment to force Cloudinary to download instead of preview
+    const downloadUrl = fileUrl.replace('/upload/', '/upload/fl_attachment/');
 
     const a = document.createElement('a');
-    a.href = blobUrl;
-    a.download = 'book.pdf';
+    a.href = downloadUrl;
+    a.target = '_blank';
     a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(blobUrl);
 
     showToast('کتاب ڈاؤن لوڈ ہو رہی ہے ✓');
   } catch (error) {
