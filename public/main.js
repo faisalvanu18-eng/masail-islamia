@@ -389,7 +389,7 @@ async function downloadBook(bookId) {
     const fileUrl = json.url.startsWith('http') ? json.url : `${SITE}${json.url}`;
 
     // Add fl_attachment to force Cloudinary to download instead of preview
-    const downloadUrl = fileUrl.replace('/upload/', '/upload/fl_attachment/');
+    <a href="${book.fileUrl}" download>Download</a>
 
     const a = document.createElement('a');
     a.href = downloadUrl;
