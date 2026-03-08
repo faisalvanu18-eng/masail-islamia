@@ -14,7 +14,6 @@ window.addEventListener('DOMContentLoaded', () => {
   if (intro) {
     setTimeout(() => {
       intro.classList.add('hide');
-
       setTimeout(() => {
         intro.style.display = 'none';
         handleInitialState();
@@ -51,12 +50,8 @@ function handleInitialState() {
 function hideIntro() {
   const intro = document.getElementById('intro');
   if (!intro) return;
-
   intro.classList.add('hide');
-
-  setTimeout(() => {
-    intro.remove();
-  }, 1000);
+  setTimeout(() => { intro.remove(); }, 1000);
 }
 
 /* ─────────────────────────────────────────────
@@ -89,7 +84,6 @@ function showMainPage() {
 
 function openDetail(pushHistory = true) {
   showDetailPage();
-
   if (pushHistory && location.hash !== '#detail') {
     history.pushState({ page: 'detail' }, '', '#detail');
   }
@@ -100,7 +94,6 @@ function closeDetail() {
     history.back();
     return;
   }
-
   showMainPage();
 }
 
@@ -184,11 +177,7 @@ function toggleCats() {
 
   requestAnimationFrame(() => {
     const sectionTop = catsSection.getBoundingClientRect().top + window.pageYOffset - 20;
-
-    window.scrollTo({
-      top: sectionTop,
-      behavior: 'smooth'
-    });
+    window.scrollTo({ top: sectionTop, behavior: 'smooth' });
   });
 }
 
@@ -197,7 +186,6 @@ function toggleCats() {
    ───────────────────────────────────────────── */
 function bindCategoryClicks() {
   const boxes = document.querySelectorAll('.cat-box');
-
   boxes.forEach(box => {
     box.addEventListener('click', () => {
       const category = box.dataset.category;
@@ -213,7 +201,6 @@ function bindCategoryClicks() {
 async function loadCategoryPage() {
   const params = new URLSearchParams(window.location.search);
   const category = params.get('category') || '';
-
   setText('category-title', category || 'Category');
   await fetchCategoryMasail(category);
 }
@@ -221,18 +208,13 @@ async function loadCategoryPage() {
 async function fetchCategoryMasail(category, search = '') {
   try {
     const params = new URLSearchParams();
-
     if (category) params.set('category', category);
     if (search) params.set('search', search);
 
     const res = await fetch(`${API}/masail?${params.toString()}`);
     const json = await res.json();
 
-    if (!json.success) {
-      renderCategoryMasail([]);
-      return;
-    }
-
+    if (!json.success) { renderCategoryMasail([]); return; }
     renderCategoryMasail(json.data || []);
   } catch (error) {
     console.log('Category masail load failed:', error.message);
@@ -245,7 +227,6 @@ function renderCategoryMasail(list) {
   const empty = document.getElementById('category-empty');
 
   if (!wrap) return;
-
   wrap.innerHTML = '';
 
   if (!list.length) {
@@ -258,7 +239,6 @@ function renderCategoryMasail(list) {
   list.forEach(item => {
     const card = document.createElement('div');
     card.className = 'card';
-
     const safeItem = JSON.stringify(item).replace(/'/g, '&apos;');
 
     card.innerHTML = `
@@ -278,7 +258,6 @@ function renderCategoryMasail(list) {
         </button>
       </div>
     `;
-
     wrap.appendChild(card);
   });
 }
@@ -287,7 +266,6 @@ function searchInCategory() {
   const params = new URLSearchParams(window.location.search);
   const category = params.get('category') || '';
   const search = getVal('category-search');
-
   fetchCategoryMasail(category, search);
 }
 
@@ -307,7 +285,6 @@ function openCategoryDetail(item) {
   if (aEl) aEl.innerHTML = (item.answerUrdu || '').replace(/\n/g, '<br><br>');
 
   setText('d-ref', item.reference || 'درمختار، رد المحتار، فتاوی عالمگیری');
-
   openDetail(true);
 }
 
@@ -317,10 +294,7 @@ function openCategoryDetail(item) {
 function bindBooksButton() {
   const btn = document.getElementById('books-page-btn');
   if (!btn) return;
-
-  btn.addEventListener('click', () => {
-    window.location.href = '/books.html';
-  });
+  btn.addEventListener('click', () => { window.location.href = '/books.html'; });
 }
 
 /* ─────────────────────────────────────────────
@@ -342,11 +316,7 @@ async function fetchBooks() {
     const res = await fetch(`${API}/books?${params.toString()}`);
     const json = await res.json();
 
-    if (!json.success) {
-      renderBooks([]);
-      return;
-    }
-
+    if (!json.success) { renderBooks([]); return; }
     renderBooks(json.data || []);
   } catch (error) {
     console.log('Books load failed:', error.message);
@@ -359,7 +329,6 @@ function renderBooks(list) {
   const empty = document.getElementById('books-empty');
 
   if (!wrap) return;
-
   wrap.innerHTML = '';
 
   if (!list.length) {
@@ -388,11 +357,13 @@ function renderBooks(list) {
         ⬇ Download Book
       </button>
     `;
-
     wrap.appendChild(item);
   });
 }
 
+/* ─────────────────────────────────────────────
+   DOWNLOAD BOOK — force save as PDF file
+   ───────────────────────────────────────────── */
 async function downloadBook(bookId) {
   if (!bookId) {
     showToast('Book not found');
@@ -417,16 +388,19 @@ async function downloadBook(bookId) {
 
     const fileUrl = json.url.startsWith('http') ? json.url : `${SITE}${json.url}`;
 
-    // Open directly in new tab — Cloudinary serves it correctly
+    // Fetch the PDF as a blob and force save with .pdf extension
+    const pdfRes = await fetch(fileUrl);
+    const blob = await pdfRes.blob();
+    const blobUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }));
+
     const a = document.createElement('a');
-    a.href = fileUrl;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
+    a.href = blobUrl;
     a.download = 'book.pdf';
     a.style.display = 'none';
     document.body.appendChild(a);
     a.click();
-    a.remove();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
 
     showToast('کتاب ڈاؤن لوڈ ہو رہی ہے ✓');
   } catch (error) {
@@ -441,15 +415,14 @@ async function downloadBook(bookId) {
     }, 1500);
   }
 }
+
 /* ─────────────────────────────────────────────
    ASK FATWA SUBMIT
    ───────────────────────────────────────────── */
 function bindAskForm() {
   const btn = document.getElementById('sub-btn');
   if (!btn) return;
-
   btn.setAttribute('type', 'button');
-
   btn.addEventListener('click', async (e) => {
     e.preventDefault();
     await submitQ();
@@ -493,9 +466,7 @@ async function submitQ() {
 
     const json = await res.json();
 
-    if (!json.success) {
-      throw new Error(json.message || 'Server error');
-    }
+    if (!json.success) { throw new Error(json.message || 'Server error'); }
 
     btn.innerHTML = '✓ سوال کامیابی سے بھیج دیا گیا';
     btn.style.background = 'linear-gradient(135deg, #1a7a3a, #267a6a)';
@@ -551,9 +522,7 @@ function setText(id, text) {
 function fmtDate(d) {
   if (!d) return '';
   return new Date(d).toLocaleDateString('en-GB', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric'
+    day: '2-digit', month: 'long', year: 'numeric'
   });
 }
 
@@ -564,22 +533,14 @@ function shortText(text, len) {
 
 function escapeHtml(str) {
   return String(str).replace(/[&<>"']/g, function (m) {
-    return ({
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#39;'
-    })[m];
+    return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[m];
   });
 }
 
 function showToast(msg) {
   const t = document.getElementById('toast');
   if (!t) return;
-
   t.textContent = msg;
   t.classList.add('show');
-
   setTimeout(() => t.classList.remove('show'), 3400);
 }
