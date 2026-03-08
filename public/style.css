@@ -425,7 +425,10 @@ header {
 /* =============================================
    CATEGORIES
    ============================================= */
-#sec-cats { background: var(--iv2); }
+#sec-cats {
+  background: var(--iv2);
+  scroll-margin-top: 80px;
+}
 .cat-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));

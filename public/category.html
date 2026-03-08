@@ -5,13 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>کیٹیگری مسائل — Masail Category</title>
   <link rel="stylesheet" href="style.css">
+  <script src="main.js" defer></script>
 </head>
 <body data-page="category">
 
   <!-- ══════════════ DETAIL PAGE ══════════════ -->
   <div id="pgDetail">
     <div class="dtl-bar">
-      <button class="btn-bk" onclick="closeDetail()">
+      <button class="btn-bk" type="button" onclick="closeDetail()">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <polyline points="15 18 9 12 15 6"/>
         </svg>
@@ -54,7 +55,7 @@
     <div class="nav-scrim" id="navScrim" onclick="closeNav()"></div>
 
     <nav id="navDrawer">
-      <button class="nav-x" onclick="closeNav()">✕</button>
+      <button class="nav-x" type="button" onclick="closeNav()">✕</button>
       <div class="nav-brand">
         <div class="nav-brand-ico">🕌</div>
         <p class="nav-brand-name">مسائل اسلامیہ</p>
@@ -63,7 +64,7 @@
       <a href="index.html#sec-daily"><span class="nd"></span>Daily Masail</a>
       <a href="index.html#sec-ask"><span class="nd"></span>Ask Masail</a>
       <a href="index.html#sec-cats"><span class="nd"></span>Categories</a>
-      <a href="books.html"><span class="nd"></span>Download Books</a>
+      <a href="books.html"><span class="nd"></span>Read Books</a>
       <a href="index.html#sec-contact"><span class="nd"></span>Contact</a>
     </nav>
 
@@ -76,8 +77,9 @@
             <span class="logo-en">MASAIL ISLAMIA</span>
           </div>
         </div>
-        <button class="menu-btn" onclick="openNav()">
-          <div class="ham-lines"><span></span><span></span><span></span></div>MENU
+        <button class="menu-btn" type="button" onclick="openNav()">
+          <div class="ham-lines"><span></span><span></span><span></span></div>
+          MENU
         </button>
       </div>
     </header>
@@ -142,14 +144,16 @@
       <div class="ft-ico">🕌</div>
       <div class="ft-name">مسائل اسلامیہ</div>
       <div class="ft-sub">Zere Sarparasti Hazrat Mufti Rafiq Purkar Madni</div>
+
       <nav class="ft-nav">
         <a href="index.html">Home</a>
         <a href="index.html#sec-daily">Daily Masail</a>
         <a href="index.html#sec-ask">Ask Masail</a>
         <a href="index.html#sec-cats">Categories</a>
-        <a href="books.html">Download Books</a>
+        <a href="books.html">Read Books</a>
         <a href="index.html#sec-contact">Contact</a>
       </nav>
+
       <div class="ft-rule"></div>
       <div class="ft-copy">© 2026 Masail Islamia — All Rights Reserved</div>
     </footer>
@@ -157,6 +161,5 @@
   </div>
 
   <div id="toast"></div>
-  <script src="main.js"></script>
 </body>
 </html>

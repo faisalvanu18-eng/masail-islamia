@@ -166,16 +166,30 @@ function openDetailFull() {
 let catsOpen = false;
 
 function toggleCats() {
+  const catsSection = document.getElementById('sec-cats');
+  const hiddenCats = document.querySelectorAll('.cat-h');
+  const lbl = document.getElementById('more-lbl');
+
+  if (!catsSection || !hiddenCats.length) return;
+
   catsOpen = !catsOpen;
 
-  document.querySelectorAll('.cat-h').forEach(el => {
+  hiddenCats.forEach(el => {
     el.classList.toggle('show', catsOpen);
   });
 
-  const lbl = document.getElementById('more-lbl');
   if (lbl) {
     lbl.textContent = catsOpen ? 'See Less ▲' : 'See More ▼';
   }
+
+  requestAnimationFrame(() => {
+    const sectionTop = catsSection.getBoundingClientRect().top + window.pageYOffset - 20;
+
+    window.scrollTo({
+      top: sectionTop,
+      behavior: 'smooth'
+    });
+  });
 }
 
 /* ─────────────────────────────────────────────
@@ -422,18 +436,15 @@ async function downloadBook(bookId) {
    ASK FATWA SUBMIT
    ───────────────────────────────────────────── */
 function bindAskForm() {
-  const form = document.getElementById('ask-form');
-  if (!form) return;
+  const btn = document.getElementById('sub-btn');
+  if (!btn) return;
 
-  form.addEventListener('submit', async (e) => {
+  btn.setAttribute('type', 'button');
+
+  btn.addEventListener('click', async (e) => {
     e.preventDefault();
     await submitQ();
   });
-
-  const btn = document.getElementById('sub-btn');
-  if (btn) {
-    btn.setAttribute('type', 'submit');
-  }
 }
 
 function getSubmitButtonMarkup() {
