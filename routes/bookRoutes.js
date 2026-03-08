@@ -1,8 +1,6 @@
 const express = require('express');
 const router = express.Router();
 const Book = require('../models/book');
-const path = require('path');
-const fs = require('fs');
 
 
 // ─────────────────────────────────────────────
@@ -56,8 +54,8 @@ router.get('/', async (req, res) => {
 
 
 // ─────────────────────────────────────────────
-// Download book — streams file directly so
-// browser downloads it instead of opening it
+// Read/Open book — increments count & returns URL
+// Frontend opens the URL directly in a new tab
 // /api/books/download/:id
 // ─────────────────────────────────────────────
 router.get('/download/:id', async (req, res) => {
@@ -72,51 +70,14 @@ router.get('/download/:id', async (req, res) => {
       });
     }
 
-    // Increment download count
+    // Increment read/view count
     book.downloadCount += 1;
     await book.save();
 
-    // Your upload folder is called 'upload' (not 'uploads')
-    // fileUrl stored in DB is like '/uploads/books/filename.pdf'
-    // but the actual folder on disk is /upload/books/filename.pdf
-    const fileName = path.basename(book.fileUrl);
-
-    // Try 1: /upload/books/filename.pdf  (your actual folder)
-    let absolutePath = path.join(__dirname, '..', 'upload', 'books', fileName);
-
-    // Try 2: /upload/filename.pdf
-    if (!fs.existsSync(absolutePath)) {
-      absolutePath = path.join(__dirname, '..', 'upload', fileName);
-    }
-
-    // Try 3: use fileUrl path as-is from project root
-    if (!fs.existsSync(absolutePath)) {
-      const rel = book.fileUrl.startsWith('/') ? book.fileUrl : '/' + book.fileUrl;
-      absolutePath = path.join(__dirname, '..', rel);
-    }
-
-    // If still not found, return error
-    if (!fs.existsSync(absolutePath)) {
-      return res.status(404).json({
-        success: false,
-        message: 'File not found on server'
-      });
-    }
-
-    // Set headers to FORCE download (not open in browser)
-    res.setHeader('Content-Type', 'application/octet-stream');
-    res.setHeader('Content-Disposition', 'attachment; filename="' + fileName + '"');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-
-    // Stream the file directly to the client
-    const fileStream = fs.createReadStream(absolutePath);
-    fileStream.pipe(res);
-
-    fileStream.on('error', (err) => {
-      console.error('File stream error:', err);
-      if (!res.headersSent) {
-        res.status(500).json({ success: false, message: 'Error reading file' });
-      }
+    // Return the file URL — frontend opens it in new tab
+    res.json({
+      success: true,
+      url: book.fileUrl
     });
 
   } catch (error) {
