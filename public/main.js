@@ -9,7 +9,17 @@ const SITE = 'https://masail-islamia.onrender.com';
    BOOT
    ───────────────────────────────────────────── */
 window.addEventListener('DOMContentLoaded', () => {
-  setTimeout(() => document.getElementById('intro')?.classList.add('hide'), 3800);
+  const intro = document.getElementById('intro');
+
+  if (intro) {
+    setTimeout(() => {
+      intro.classList.add('hide');
+
+      setTimeout(() => {
+        intro.style.display = 'none';
+      }, 1000);
+    }, 3800);
+  }
 
   bindCategoryClicks();
   bindBooksButton();
@@ -24,7 +34,6 @@ window.addEventListener('DOMContentLoaded', () => {
     loadBooksPage();
   }
 });
-
 /* ─────────────────────────────────────────────
    NAV DRAWER
    ───────────────────────────────────────────── */
