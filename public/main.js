@@ -1,5 +1,5 @@
 /* ============================================================
-   MASAIL ISLAMIA — main.js
+   MASAIL ISLAMIA — main.js  (UX ENHANCED)
    ============================================================ */
 
 const API = 'https://masail-islamia.onrender.com/api';
@@ -14,11 +14,17 @@ window.addEventListener('DOMContentLoaded', () => {
   bindCategoryClicks();
   bindBooksButton();
   bindAskForm();
+  initScrollReveal();
+  initScrollTop();
+  initHeaderScroll();
+  initRippleEffects();
+  addParticleCanvas();
+
+  document.body.classList.add('page-fade');
 
   if (intro) {
     setTimeout(() => {
       intro.classList.add('hide');
-
       setTimeout(() => {
         intro.style.display = 'none';
         handleInitialState();
@@ -61,13 +67,162 @@ function handleInitialState() {
   }
 }
 
-function hideIntro() {
+/* ─────────────────────────────────────────────
+   PARTICLE CANVAS (Intro)
+   ───────────────────────────────────────────── */
+function addParticleCanvas() {
   const intro = document.getElementById('intro');
   if (!intro) return;
-  intro.classList.add('hide');
-  setTimeout(() => {
-    intro.remove();
-  }, 1000);
+
+  const canvas = document.createElement('canvas');
+  canvas.id = 'intro-canvas';
+  intro.insertBefore(canvas, intro.firstChild);
+
+  const ctx = canvas.getContext('2d');
+  let particles = [];
+  let animId;
+
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function createParticle() {
+    return {
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.5 + 0.5,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: -Math.random() * 0.6 - 0.2,
+      alpha: Math.random() * 0.5 + 0.2,
+      color: Math.random() > 0.5 ? '#f0c84a' : '#ffffff',
+      life: 1
+    };
+  }
+
+  for (let i = 0; i < 60; i++) particles.push(createParticle());
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach((p, i) => {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.life -= 0.004;
+      if (p.life <= 0 || p.y < -10) {
+        particles[i] = createParticle();
+        particles[i].y = canvas.height + 5;
+        return;
+      }
+      ctx.save();
+      ctx.globalAlpha = p.alpha * p.life;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
+    animId = requestAnimationFrame(draw);
+  }
+  draw();
+
+  // Stop when intro hides
+  const observer = new MutationObserver(() => {
+    if (intro.style.display === 'none' || intro.classList.contains('hide')) {
+      cancelAnimationFrame(animId);
+    }
+  });
+  observer.observe(intro, { attributes: true, attributeFilter: ['style', 'class'] });
+}
+
+/* ─────────────────────────────────────────────
+   SCROLL REVEAL
+   ───────────────────────────────────────────── */
+function initScrollReveal() {
+  const targets = document.querySelectorAll('.card, .cat-box, .ct-tile, .bk, .sec-hd, .hero-in');
+  targets.forEach((el, i) => {
+    el.classList.add('reveal');
+    if (i % 4 === 1) el.classList.add('reveal-delay-1');
+    else if (i % 4 === 2) el.classList.add('reveal-delay-2');
+    else if (i % 4 === 3) el.classList.add('reveal-delay-3');
+  });
+
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.08, rootMargin: '0px 0px -30px 0px' });
+
+  targets.forEach(el => observer.observe(el));
+}
+
+/* ─────────────────────────────────────────────
+   HEADER SCROLL STATE
+   ───────────────────────────────────────────── */
+function initHeaderScroll() {
+  const header = document.querySelector('header');
+  if (!header) return;
+
+  let lastScroll = 0;
+  window.addEventListener('scroll', () => {
+    const scrollY = window.scrollY;
+    if (scrollY > 50) {
+      header.classList.add('scrolled');
+    } else {
+      header.classList.remove('scrolled');
+    }
+    lastScroll = scrollY;
+  }, { passive: true });
+}
+
+/* ─────────────────────────────────────────────
+   SCROLL TO TOP
+   ───────────────────────────────────────────── */
+function initScrollTop() {
+  const btn = document.createElement('button');
+  btn.id = 'scrollTop';
+  btn.innerHTML = '↑';
+  btn.setAttribute('aria-label', 'Scroll to top');
+  document.body.appendChild(btn);
+
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 400) {
+      btn.classList.add('show');
+    } else {
+      btn.classList.remove('show');
+    }
+  }, { passive: true });
+
+  btn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
+
+/* ─────────────────────────────────────────────
+   RIPPLE EFFECTS
+   ───────────────────────────────────────────── */
+function initRippleEffects() {
+  const rippleTargets = document.querySelectorAll('.btn-rm, .btn-sub, .btn-srch, .btn-dl, .admin-btn, .cat-box');
+  rippleTargets.forEach(el => {
+    el.style.position = 'relative';
+    el.style.overflow = 'hidden';
+    el.addEventListener('click', createRipple);
+  });
+}
+
+function createRipple(e) {
+  const btn = e.currentTarget;
+  const rect = btn.getBoundingClientRect();
+  const ripple = document.createElement('span');
+  ripple.classList.add('ripple');
+  ripple.style.left = (e.clientX - rect.left) + 'px';
+  ripple.style.top  = (e.clientY - rect.top) + 'px';
+  btn.appendChild(ripple);
+  setTimeout(() => ripple.remove(), 600);
 }
 
 /* ─────────────────────────────────────────────
@@ -76,11 +231,13 @@ function hideIntro() {
 function openNav() {
   document.getElementById('navDrawer')?.classList.add('open');
   document.getElementById('navScrim')?.classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
 
 function closeNav() {
   document.getElementById('navDrawer')?.classList.remove('open');
   document.getElementById('navScrim')?.classList.remove('open');
+  document.body.style.overflow = '';
 }
 
 /* ─────────────────────────────────────────────
@@ -89,13 +246,13 @@ function closeNav() {
 function showDetailPage() {
   document.getElementById('pgMain')?.classList.add('hide');
   document.getElementById('pgDetail')?.classList.add('show');
-  window.scrollTo(0, 0);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function showMainPage() {
   document.getElementById('pgDetail')?.classList.remove('show');
   document.getElementById('pgMain')?.classList.remove('hide');
-  window.scrollTo(0, 0);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function openDetail(pushHistory = true) {
@@ -183,13 +340,31 @@ function toggleCats() {
 
   catsOpen = !catsOpen;
 
-  hiddenCats.forEach(el => {
-    el.classList.toggle('show', catsOpen);
+  hiddenCats.forEach((el, i) => {
+    if (catsOpen) {
+      el.classList.add('show');
+      el.style.animationDelay = `${i * 0.04}s`;
+    } else {
+      el.classList.remove('show');
+    }
   });
 
   if (lbl) {
     lbl.textContent = catsOpen ? 'See Less ▲' : 'See More ▼';
   }
+
+  // Re-observe new visible categories for ripple
+  setTimeout(() => {
+    if (catsOpen) {
+      const newCats = document.querySelectorAll('.cat-h.show');
+      newCats.forEach(el => {
+        if (!el.hasRipple) {
+          el.addEventListener('click', createRipple);
+          el.hasRipple = true;
+        }
+      });
+    }
+  }, 50);
 
   requestAnimationFrame(() => {
     const sectionTop = catsSection.getBoundingClientRect().top + window.pageYOffset - 20;
@@ -256,9 +431,10 @@ function renderCategoryMasail(list) {
 
   if (empty) empty.style.display = 'none';
 
-  list.forEach(item => {
+  list.forEach((item, index) => {
     const card = document.createElement('div');
-    card.className = 'card';
+    card.className = 'card reveal';
+    card.style.transitionDelay = `${index * 0.08}s`;
     const safeItem = JSON.stringify(item).replace(/'/g, '&apos;');
 
     card.innerHTML = `
@@ -279,6 +455,9 @@ function renderCategoryMasail(list) {
       </div>
     `;
     wrap.appendChild(card);
+
+    // Trigger reveal
+    setTimeout(() => card.classList.add('visible'), 50 + index * 80);
   });
 }
 
@@ -364,11 +543,12 @@ function renderBooks(list) {
 
   if (empty) empty.style.display = 'none';
 
-  list.forEach(book => {
+  list.forEach((book, index) => {
     const bookId = book._id || '';
 
     const item = document.createElement('div');
-    item.className = 'bk';
+    item.className = 'bk reveal';
+    item.style.transitionDelay = `${index * 0.1}s`;
 
     item.innerHTML = `
       <div class="bk-cov"><span>📕</span></div>
@@ -383,6 +563,8 @@ function renderBooks(list) {
       </button>
     `;
     wrap.appendChild(item);
+
+    setTimeout(() => item.classList.add('visible'), 50 + index * 100);
   });
 }
 
@@ -401,7 +583,7 @@ async function downloadBook(bookId) {
   try {
     if (btn) {
       btn.disabled = true;
-      btn.innerHTML = '⏳ Downloading...';
+      btn.innerHTML = '<span class="spin"></span> Downloading...';
     }
 
     const res = await fetch(`${API}/books/download/${bookId}`);
@@ -467,6 +649,18 @@ async function submitQ() {
   const qtext = getVal('ask-q');
 
   if (!name || !email || !phone || !qtext) {
+    // Shake animation on empty fields
+    ['ask-name', 'ask-email', 'ask-phone', 'ask-q'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el && !el.value.trim()) {
+        el.style.borderColor = 'var(--red)';
+        el.style.animation = 'shake 0.4s ease';
+        el.addEventListener('input', () => {
+          el.style.borderColor = '';
+          el.style.animation = '';
+        }, { once: true });
+      }
+    });
     showToast('تمام ضروری خانے پُر کریں — Fill all fields');
     return;
   }
