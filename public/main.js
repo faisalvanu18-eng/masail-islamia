@@ -559,7 +559,7 @@ function renderBooks(list) {
         <div class="bk-desc">Category: ${escapeHtml(book.category || '')}</div>
       </div>
       <button class="btn-dl" type="button" id="dl-btn-${bookId}" onclick="downloadBook('${bookId}')">
-        ⬇ Download Book
+        ⬇ Click to Read Book
       </button>
     `;
     wrap.appendChild(item);
